@@ -1,7 +1,8 @@
 <?php
 
-namespace mp_dd_encounters;
+namespace dd_encounters;
 
+use dd_encounters\models\Player;
 use mp_general\base\BaseFunctions;
 use mp_general\forms\models\SharedField;
 
@@ -40,7 +41,7 @@ abstract class Options
         <h1 class="wp-heading-inline"><span>Shared Form Fields</span><?= current_user_can('manage_shared_base_fields') ? $addNew : '' ?></h1>
         <p>These fields will be available for all sites.</p>
         <?php
-        mp_ssv_show_table(SharedField::class, $orderBy, $order, current_user_can('manage_shared_base_fields'));
+        mp_ssv_show_table(Player::class, $orderBy, $order, current_user_can('manage_shared_base_fields'));
     }
 }
 

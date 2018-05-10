@@ -1,6 +1,6 @@
 <?php
 
-namespace mp_dd_encounters;
+namespace dd_encounters;
 
 use mp_general\base\BaseFunctions;
 
