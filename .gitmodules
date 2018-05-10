@@ -1,0 +1,3 @@
+[submodule "general"]
+	path = general
+	url = https://github.com/Moridrin/general.git
