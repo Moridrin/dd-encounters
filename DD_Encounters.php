@@ -65,9 +65,6 @@ abstract class DD_Encounters
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         $tableName = Player::getDatabaseTableName($blogId);
         $wpdb->query("DROP TABLE $tableName;");
-        if ($wpdb->last_error) {
-            throw new \Exception($wpdb->last_error);
-        }
     }
 
     public static function filterContent($content): string

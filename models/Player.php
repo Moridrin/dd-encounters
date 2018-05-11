@@ -17,6 +17,12 @@ class Player extends Model
         return parent::_create(['p_name' => $name, 'p_level' => $level, 'p_hp' => $hp]);
     }
 
+    /**
+     * @param string $orderBy
+     * @param string $order
+     * @param string $key
+     * @return Player[]
+     */
     public static function getAll(string $orderBy = 'id', string $order = 'ASC', string $key = 'id'): array
     {
         return parent::_getAll($orderBy, $order, $key);
