@@ -27,6 +27,7 @@ abstract class Options
 
     public static function showPlayersList()
     {
+        ?><div class="wrap"><?php
         if (BaseFunctions::isValidPOST(null)) {
             if ($_POST['action'] === 'delete-selected' && !isset($_POST['_inline_edit'])) {
                 SharedField::deleteByIds(BaseFunctions::sanitize($_POST['ids'], 'int'));
@@ -42,6 +43,7 @@ abstract class Options
         <p>These fields will be available for all sites.</p>
         <?php
         mp_ssv_show_table(Player::class, $orderBy, $order, current_user_can('manage_shared_base_fields'));
+        ?></div><?php
     }
 }
 
