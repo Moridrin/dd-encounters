@@ -27,23 +27,26 @@ abstract class Options
 
     public static function showPlayersList()
     {
-        ?><div class="wrap"><?php
-        if (BaseFunctions::isValidPOST(null)) {
-            if ($_POST['action'] === 'delete-selected' && !isset($_POST['_inline_edit'])) {
-                SharedField::deleteByIds(BaseFunctions::sanitize($_POST['ids'], 'int'));
-            } else {
-                $_SESSION['SSV']['errors'][] = 'Unknown action.';
-            }
-        }
-        $orderBy = BaseFunctions::sanitize(isset($_GET['orderby']) ? $_GET['orderby'] : 'f_name', 'text');
-        $order   = BaseFunctions::sanitize(isset($_GET['order']) ? $_GET['order'] : 'asc', 'text');
-        $addNew  = '<a href="javascript:void(0)" class="page-title-action" onclick="fieldsManager.addNew(\'the-list\', \'\')">Add New</a>';
         ?>
-        <h1 class="wp-heading-inline"><span>Shared Form Fields</span><?= current_user_can('manage_shared_base_fields') ? $addNew : '' ?></h1>
-        <p>These fields will be available for all sites.</p>
+        <div class="wrap">
+            <?php
+            if (BaseFunctions::isValidPOST(null)) {
+                if ($_POST['action'] === 'delete-selected' && !isset($_POST['_inline_edit'])) {
+                    SharedField::deleteByIds(BaseFunctions::sanitize($_POST['ids'], 'int'));
+                } else {
+                    $_SESSION['SSV']['errors'][] = 'Unknown action.';
+                }
+            }
+            $orderBy = BaseFunctions::sanitize(isset($_GET['orderby']) ? $_GET['orderby'] : 'f_name', 'text');
+            $order   = BaseFunctions::sanitize(isset($_GET['order']) ? $_GET['order'] : 'asc', 'text');
+            $addNew  = '<a href="javascript:void(0)" class="page-title-action" onclick="playerManager.addNew(\'the-list\', \'\')">Add New</a>';
+            ?>
+            <h1 class="wp-heading-inline">
+                <span>Shared Form Fields</span><?= current_user_can('manage_shared_base_fields') ? $addNew : '' ?></h1>
+            <p>These fields will be available for all sites.</p>
+            <?php mp_ssv_show_table(Player::class, $orderBy, $order, current_user_can('manage_shared_base_fields')); ?>
+        </div>
         <?php
-        mp_ssv_show_table(Player::class, $orderBy, $order, current_user_can('manage_shared_base_fields'));
-        ?></div><?php
     }
 }
 

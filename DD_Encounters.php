@@ -2,7 +2,9 @@
 
 namespace dd_encounters;
 
+use dd_encounters\models\Player;
 use mp_general\base\BaseFunctions;
+use mp_general\base\SSV_Global;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -12,6 +14,61 @@ abstract class DD_Encounters
 {
     const PATH = DD_ENCOUNTERS_PATH;
     const URL  = DD_ENCOUNTERS_URL;
+
+    /**
+     * @param $network_wide
+     * @throws \Exception
+     */
+    public static function setup($network_wide = false)
+    {
+        if (is_multisite() && $network_wide) {
+            SSV_Global::runFunctionOnAllSites([self::class, 'setupForBlog']);
+        } else {
+            self::setupForBlog();
+        }
+    }
+
+    /**
+     * @param $network_wide
+     * @throws \Exception
+     */
+    public static function deactivate($network_wide = false)
+    {
+        if (is_multisite() && $network_wide) {
+            SSV_Global::runFunctionOnAllSites([self::class, 'deactivate']);
+        } else {
+            self::cleanupBlog();
+        }
+    }
+
+    /**
+     * @param int|null $blogId
+     * @throws \Exception
+     */
+    public static function setupForBlog(int $blogId = null)
+    {
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        global $wpdb;
+        $wpdb->query(Player::getDatabaseCreateQuery($blogId));
+        if ($wpdb->last_error) {
+            throw new \Exception($wpdb->last_error);
+        }
+    }
+
+    /**
+     * @param int|null $blogId
+     * @throws \Exception
+     */
+    public static function cleanupBlog(int $blogId = null)
+    {
+        global $wpdb;
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        $tableName = Player::getDatabaseTableName($blogId);
+        $wpdb->query("DROP TABLE $tableName;");
+        if ($wpdb->last_error) {
+            throw new \Exception($wpdb->last_error);
+        }
+    }
 
     public static function filterContent($content): string
     {
@@ -64,16 +121,16 @@ abstract class DD_Encounters
         }
         switch ($page) {
             case 'dd_encounters':
-                self::enquireFieldsManagerScripts();
+                self::enquirePlayerManagerScripts();
                 break;
         }
     }
 
-    private static function enquireFieldsManagerScripts()
+    public static function enquirePlayerManagerScripts()
     {
         $activeTab = $_GET['tab'] ?? 'shared';
-        wp_enqueue_script('mp-ssv-fields-manager', SSV_Forms::URL . '/js/fields-manager.js', ['jquery']);
-        wp_localize_script('mp-ssv-fields-manager', 'mp_ssv_fields_manager_params', [
+        wp_enqueue_script('mp-dd-player-manager', self::URL . '/js/player-manager.js', ['jquery']);
+        wp_localize_script('mp-dd-player-manager', 'mp_ssv_player_manager_params', [
             'urls'       => [
                 'plugins'  => plugins_url(),
                 'ajax'     => admin_url('admin-ajax.php'),
@@ -81,8 +138,8 @@ abstract class DD_Encounters
                 'basePath' => ABSPATH,
             ],
             'actions'    => [
-                'save'   => 'mp_general_forms_save_field',
-                'delete' => 'mp_general_forms_delete_field',
+                'save'   => 'mp_dd_encounters_save_player',
+                'delete' => 'mp_dd_encounters_delete_player',
             ],
             'isShared'   => $activeTab === 'shared',
             'roles'      => array_keys(get_editable_roles()),
@@ -90,30 +147,9 @@ abstract class DD_Encounters
             'formId'     => $_GET['id'] ?? null,
         ]);
     }
-
-    private static function enquireFormEditorScripts()
-    {
-        wp_enqueue_script('mp-ssv-form-editor', SSV_Forms::URL . '/js/form-editor.js', ['jquery']);
-    }
-
-    private static function enquireFormsManagerScripts()
-    {
-        wp_enqueue_script('mp-ssv-forms-manager', SSV_Forms::URL . '/js/forms-manager.js', ['jquery']);
-        wp_localize_script('mp-ssv-forms-manager', 'mp_ssv_forms_manager_params', [
-            'urls'    => [
-                'plugins'  => plugins_url(),
-                'ajax'     => admin_url('admin-ajax.php'),
-                'base'     => get_home_url(),
-                'basePath' => ABSPATH,
-            ],
-            'actions' => [
-                'delete' => 'mp_general_forms_delete_form',
-            ],
-            'formId'  => $_GET['id'] ?? null,
-        ]);
-    }
 }
 
 add_filter('the_content', [DD_Encounters::class, 'filterContent']);
-register_activation_hook(__FILE__, [DD_Encounters::class, 'setup']);
-register_deactivation_hook(__FILE__, [DD_Encounters::class, 'deactivate']);
+register_activation_hook(__DIR__ . DIRECTORY_SEPARATOR . 'dd-encounters.php', [DD_Encounters::class, 'setup']);
+register_deactivation_hook(__DIR__ . DIRECTORY_SEPARATOR . 'dd-encounters.php', [DD_Encounters::class, 'deactivate']);
+add_action('admin_enqueue_scripts', [DD_Encounters::class, 'enqueueAdminScripts']);
