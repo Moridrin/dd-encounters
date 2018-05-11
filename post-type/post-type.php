@@ -109,19 +109,15 @@ function dd_encounter_creatures()
             </li>
         <?php endforeach; ?>
     </ul>
-    <div id="encounter_category-adder" class="wp-hidden-children">
-        <a id="encounter_category-add-toggle" href="#encounter_category-add" class="hide-if-no-js taxonomy-add-new">
-            + Add New Category				</a>
-        <p id="encounter_category-add" class="category-add wp-hidden-child">
-            <label class="screen-reader-text" for="newencounter_category">Add New Category</label>
-            <input type="text" name="newencounter_category" id="newencounter_category" class="form-required form-input-tip" value="New Category Name" aria-required="true">
-            <label class="screen-reader-text" for="newencounter_category_parent">
-                Parent Category:					</label>
-            <select name="newencounter_category_parent" id="newencounter_category_parent" class="postform">
-                <option value="-1" selected="selected">— Parent Category —</option>
-            </select>
-            <input type="button" id="encounter_category-add-submit" data-wp-lists="add:encounter_categorychecklist:encounter_category-add" class="button category-add-submit" value="Add New Category">
-            <input type="hidden" id="_ajax_nonce-add-encounter_category" name="_ajax_nonce-add-encounter_category" value="68213ca41a">					<span id="encounter_category-ajax-response"></span>
+    <div id="encounter_creature-adder" class="wp-hidden-children">
+        <a href="javascript:void(0)" onclick="encounterEditor.show()" style="font-weight: 600;">+ Add Creature</a>
+        <p id="creatureAddForm" class="category-add" style="display: none;">
+            <label for="new_encounter_creature"></label>
+            <input type="text" name="new_encounter_creature" id="new_encounter_creature" class="form-required" required>
+            <input type="button" id="encounter_creature-add-submit"
+                   data-wp-lists="add:encounter_creaturechecklist:encounter_creature-add"
+                   class="button category-add-submit" value="Add New Creature">
+            <span id="encounter_creature-ajax-response"></span>
         </p>
     </div>
     <?php

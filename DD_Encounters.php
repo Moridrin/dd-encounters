@@ -113,19 +113,19 @@ abstract class DD_Encounters
     public static function enqueueAdminScripts()
     {
         $page = $_GET['page'] ?? null;
-        if (!in_array($page, ['dd_encounters'])) {
-            return;
-        }
         switch ($page) {
             case 'dd_encounters':
                 self::enquirePlayerManagerScripts();
                 break;
         }
+        global $post_type;
+        if ($post_type === 'encounters') {
+            self::enquireEncounterEditorScripts();
+        }
     }
 
     public static function enquirePlayerManagerScripts()
     {
-        $activeTab = $_GET['tab'] ?? 'shared';
         wp_enqueue_script('mp-dd-player-manager', self::URL . '/js/player-manager.js', ['jquery']);
         wp_localize_script('mp-dd-player-manager', 'mp_ssv_player_manager_params', [
             'urls'       => [
@@ -138,10 +138,23 @@ abstract class DD_Encounters
                 'save'   => 'mp_dd_encounters_save_player',
                 'delete' => 'mp_dd_encounters_delete_player',
             ],
-            'isShared'   => $activeTab === 'shared',
-            'roles'      => array_keys(get_editable_roles()),
-            'inputTypes' => BaseFunctions::getInputTypes($activeTab === 'shared' ? ['role_checkbox', 'role_select'] : []),
-            'formId'     => $_GET['id'] ?? null,
+        ]);
+    }
+
+    public static function enquireEncounterEditorScripts()
+    {
+        wp_enqueue_script('mp-dd-encounter-editor', self::URL . '/js/encounter-editor.js', ['jquery']);
+        wp_localize_script('mp-dd-encounter-editor', 'mp_ssv_encounter_editor_params', [
+            'urls'    => [
+                'plugins'  => plugins_url(),
+                'ajax'     => admin_url('admin-ajax.php'),
+                'base'     => get_home_url(),
+                'basePath' => ABSPATH,
+            ],
+            'actions' => [
+                'save'   => 'mp_dd_encounters_add_creature',
+                'delete' => 'mp_dd_encounters_remove_creature',
+            ],
         ]);
     }
 }
