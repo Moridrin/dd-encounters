@@ -15,6 +15,8 @@ abstract class DD_Encounters
     const PATH = DD_ENCOUNTERS_PATH;
     const URL  = DD_ENCOUNTERS_URL;
 
+    const CREATURE_CREATE_ADMIN_REFERER = 'dd_encounters__creature_create_admin_referer';
+
     /**
      * @param $network_wide
      * @throws \Exception

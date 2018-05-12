@@ -15,29 +15,17 @@ function mp_dd_encounters_post_category()
 
     $labels = array(
         'name'               => 'Encounters',
-        'encounters',
         'singular_name'      => 'Encounter',
-        'encounters',
         'add_new'            => 'Add New',
-        'encounters',
         'add_new_item'       => 'Add New Encounter',
-        'encounters',
         'edit_item'          => 'Edit Encounter',
-        'encounters',
         'new_item'           => 'New Encounter',
-        'encounters',
         'view_item'          => 'View Encounter',
-        'encounters',
         'search_items'       => 'Search Encounters',
-        'encounters',
         'not_found'          => 'No Encounters found',
-        'encounters',
         'not_found_in_trash' => 'No Encounters found in Trash',
-        'encounters',
         'parent_item_colon'  => 'Parent Encounter:',
-        'encounters',
         'menu_name'          => 'Encounters',
-        'encounters',
     );
 
     $args = array(
@@ -113,11 +101,13 @@ function dd_encounter_creatures()
         <a href="javascript:void(0)" onclick="encounterEditor.show()" style="font-weight: 600;">+ Add Creature</a>
         <p id="creatureAddForm" class="category-add" style="display: none;">
             <label for="new_encounter_creature"></label>
-            <input type="text" name="new_encounter_creature" id="new_encounter_creature" class="form-required" required>
-            <input type="button" id="encounter_creature-add-submit"
-                   data-wp-lists="add:encounter_creaturechecklist:encounter_creature-add"
-                   class="button category-add-submit" value="Add New Creature">
-            <span id="encounter_creature-ajax-response"></span>
+            <input type="text" name="new_encounter_creature_name" id="new_encounter_creature"
+                   placeholder="Creature Name">
+            <input type="number" name="new_encounter_creature_level" id="new_encounter_creature" placeholder="Level"
+                   style="width: 50%; margin: 0 -1px 1em;">
+            <input type="number" name="new_encounter_creature_hp" id="new_encounter_creature" placeholder="HP"
+                   style="width: 50%; margin: 0 -1px 1em;">
+            <input type="button" id="addCreatureButton" class="button category-add-submit" value="Add New Creature">
         </p>
     </div>
     <?php
