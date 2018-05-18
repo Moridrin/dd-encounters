@@ -2,6 +2,7 @@
 
 namespace dd_encounters;
 
+use dd_encounters\models\Creature;
 use dd_encounters\models\Player;
 use mp_general\base\BaseFunctions;
 use mp_general\forms\models\SharedField;
@@ -19,10 +20,9 @@ abstract class Options
 
     public static function setupSiteSpecificMenu()
     {
-        // add_menu_page('Players', 'Players', 'edit_players', 'dd_encounters', '', 'dashicons-feedback');
-        // add_submenu_page('dd_encounters', 'All Forms', 'All Forms', 'edit_posts', 'ssv_forms', [self::class, 'showFormsPage']);
-        // add_submenu_page('dd_encounters', 'Add New', 'Add New', 'edit_posts', 'ssv_forms_add_new_form', [self::class, 'showFormPageEdit']);
-        // add_submenu_page('dd_encounters', 'Manage Fields', 'Manage Fields', 'edit_posts', 'ssv_forms_fields_manager', [self::class, 'showCombinedFieldsPage']);
+        add_menu_page('Creatures', 'Creatures', 'edit_creatures', 'dd_creatures', '', 'dashicons-feedback');
+        add_submenu_page('dd_creatures', 'Creatures', 'Creatures', 'edit_creatures', 'dd_creatures', [self::class, 'showCreaturesList']);
+        add_submenu_page('dd_creatures', 'Players', 'Players', 'edit_players', 'dd_players', [self::class, 'showPlayersList']);
     }
 
     public static function showPlayersList()
@@ -42,9 +42,33 @@ abstract class Options
             $addNew  = '<a href="javascript:void(0)" class="page-title-action" onclick="playerManager.addNew(\'the-list\', \'\')">Add New</a>';
             ?>
             <h1 class="wp-heading-inline">
-                <span>Shared Form Fields</span><?= current_user_can('manage_shared_base_fields') ? $addNew : '' ?></h1>
+                <span>Players</span><?= current_user_can('manage_shared_base_fields') ? $addNew : '' ?></h1>
             <p>These fields will be available for all sites.</p>
-            <?php mp_ssv_show_table(Player::class, $orderBy, $order, current_user_can('manage_shared_base_fields')); ?>
+            <?php mp_ssv_show_table(Player::class, $orderBy, $order, current_user_can('edit_creatures')); ?>
+        </div>
+        <?php
+    }
+
+    public static function showCreaturesList()
+    {
+        ?>
+        <div class="wrap">
+            <?php
+            if (BaseFunctions::isValidPOST(null)) {
+                if ($_POST['action'] === 'delete-selected' && !isset($_POST['_inline_edit'])) {
+                    SharedField::deleteByIds(BaseFunctions::sanitize($_POST['ids'], 'int'));
+                } else {
+                    $_SESSION['SSV']['errors'][] = 'Unknown action.';
+                }
+            }
+            $orderBy = BaseFunctions::sanitize(isset($_GET['orderby']) ? $_GET['orderby'] : 'f_name', 'text');
+            $order   = BaseFunctions::sanitize(isset($_GET['order']) ? $_GET['order'] : 'asc', 'text');
+            $addNew  = '<a href="javascript:void(0)" class="page-title-action" onclick="playerManager.addNew(\'the-list\', \'\')">Add New</a>';
+            ?>
+            <h1 class="wp-heading-inline">
+                <span>Creatures</span><?= current_user_can('manage_shared_base_fields') ? $addNew : '' ?></h1>
+            <p>These fields will be available for all sites.</p>
+            <?php mp_ssv_show_table(Creature::class, $orderBy, $order, current_user_can('edit_players')); ?>
         </div>
         <?php
     }

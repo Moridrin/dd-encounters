@@ -1,7 +1,7 @@
 // noinspection JSUnresolvedVariable
-let params = mp_ssv_player_manager_params;
+let params = mp_ssv_creature_manager_params;
 
-let playerManager = {
+let creatureManager = {
 
     editor: {
 
@@ -11,7 +11,7 @@ let playerManager = {
         getInputPlayer: function (title, name, value, type, events) {
             // console.log(events.onkeydown);
             // if (events.onkeydown === undefined) {
-            events.onkeydown = 'playerManager.editor.onKeyDown()';
+            events.onkeydown = 'creatureManager.editor.onKeyDown()';
             // }
             let eventsString = '';
             for (let [eventName, event] of Object.entries(events)) {
@@ -88,7 +88,7 @@ let playerManager = {
             let editType = document.getElementById('edit-type').dataset.editType;
             if (editType === 'edit') {
                 if (event.keyCode === 13) {
-                    playerManager.saveEdit();
+                    creatureManager.saveEdit();
                     event.preventDefault();
                     return false;
                 } else {
@@ -97,7 +97,7 @@ let playerManager = {
                 }
             } else if (editType === 'customize') {
                 if (event.keyCode === 13) {
-                    playerManager.saveCustomization();
+                    creatureManager.saveCustomization();
                     event.preventDefault();
                     return false;
                 }
@@ -209,8 +209,8 @@ let playerManager = {
             '   <fieldset id="value_container" class="inline-edit-col" style="width: 30%; margin-top: 32px;">' +
             '   </fieldset>' +
             '   <div class="submit inline-edit-save">' +
-            '       <button type="button" class="button cancel alignleft" onclick="playerManager.cancel()">Cancel</button>' +
-            '       <button type="button" class="button button-primary save alignright" onclick="playerManager.saveEdit()">Save</button>' +
+            '       <button type="button" class="button cancel alignleft" onclick="creatureManager.cancel()">Cancel</button>' +
+            '       <button type="button" class="button button-primary save alignright" onclick="creatureManager.saveEdit()">Save</button>' +
             '       <br class="clear">' +
             '   </div>' +
             '</td>'
@@ -289,8 +289,8 @@ let playerManager = {
                 if (generalFunctions.ajaxResponse(data)) {
                     let id = JSON.parse(data)['id'];
                     tr.setAttribute('id', 'model_' + id);
-                    playerManager.editor.current = id;
-                    playerManager.closeEditor();
+                    creatureManager.editor.current = id;
+                    creatureManager.closeEditor();
                 }
             }
         );
@@ -323,8 +323,8 @@ let playerManager = {
             '<td>' +
             '   <strong>' + properties.name + '</strong>' +
             '   <div class="row-actions">' +
-            '       <span class="inline"><a href="javascript:void(0)" onclick="playerManager.edit(\'' + id + '\')" class="editinline">Edit</a> | </span>' +
-            '       <span class="trash"><a href="javascript:void(0)" onclick="playerManager.deleteRow(\'' + id + '\')" class="submitdelete">Trash</a></span>' +
+            '       <span class="inline"><a href="javascript:void(0)" onclick="creatureManager.edit(\'' + id + '\')" class="editinline">Edit</a> | </span>' +
+            '       <span class="trash"><a href="javascript:void(0)" onclick="creatureManager.deleteRow(\'' + id + '\')" class="submitdelete">Trash</a></span>' +
             '   </div>' +
             '</td>' +
             '<td>' + properties.level + '</td>' +
