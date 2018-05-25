@@ -41,9 +41,7 @@ abstract class Options
             $order   = BaseFunctions::sanitize(isset($_GET['order']) ? $_GET['order'] : 'asc', 'text');
             $addNew  = '<a href="javascript:void(0)" class="page-title-action" onclick="playerManager.addNew(\'the-list\', \'\')">Add New</a>';
             ?>
-            <h1 class="wp-heading-inline">
-                <span>Players</span><?= current_user_can('manage_shared_base_fields') ? $addNew : '' ?></h1>
-            <p>These fields will be available for all sites.</p>
+            <h1 class="wp-heading-inline"><span>Players</span><?= current_user_can('manage_shared_base_fields') ? $addNew : '' ?></h1>
             <?php mp_ssv_show_table(Player::class, $orderBy, $order, current_user_can('edit_creatures')); ?>
         </div>
         <?php
@@ -63,11 +61,9 @@ abstract class Options
             }
             $orderBy = BaseFunctions::sanitize(isset($_GET['orderby']) ? $_GET['orderby'] : 'f_name', 'text');
             $order   = BaseFunctions::sanitize(isset($_GET['order']) ? $_GET['order'] : 'asc', 'text');
-            $addNew  = '<a href="javascript:void(0)" class="page-title-action" onclick="playerManager.addNew(\'the-list\', \'\')">Add New</a>';
+            $addNew  = '<a href="javascript:void(0)" class="page-title-action" onclick="creatureManager.addNew(\'the-list\', \'\')">Add New</a>';
             ?>
-            <h1 class="wp-heading-inline">
-                <span>Creatures</span><?= current_user_can('manage_shared_base_fields') ? $addNew : '' ?></h1>
-            <p>These fields will be available for all sites.</p>
+            <h1 class="wp-heading-inline"><span>Creatures</span><?= current_user_can('manage_shared_base_fields') ? $addNew : '' ?></h1>
             <?php mp_ssv_show_table(Creature::class, $orderBy, $order, current_user_can('edit_players')); ?>
         </div>
         <?php

@@ -3,167 +3,13 @@ let params = mp_ssv_creature_manager_params;
 
 let creatureManager = {
 
-    editor: {
-
-        current: null,
-        isOpen: false,
-
-        getInputPlayer: function (title, name, value, type, events) {
-            // console.log(events.onkeydown);
-            // if (events.onkeydown === undefined) {
-            events.onkeydown = 'creatureManager.editor.onKeyDown()';
-            // }
-            let eventsString = '';
-            for (let [eventName, event] of Object.entries(events)) {
-                eventsString += eventName + '="' + event + '" ';
-            }
-            let html =
-                '<label id="' + name + '_container">' +
-                '   <span class="title">' + title + '</span>' +
-                '   <span class="input-text-wrap">'
-            ;
-            if (type === 'textarea') {
-                html += '<textarea name="' + name + '">' + value + '</textarea>';
-            } else {
-                html += '<input type="' + type + '" name="' + name + '" value="' + value + '" autocomplete="off" style="width: 100%;" ' + eventsString + '>';
-            }
-            html +=
-                '   </span>' +
-                '</label>'
-            ;
-            return html;
-        },
-
-        getCheckboxInputPlayer: function (title, name, value, description, events) {
-            let checked = (value === true || value === 'true') ? 'checked="checked"' : '';
-            let eventsString = '';
-            for (let [eventName, event] of Object.entries(events)) {
-                eventsString += eventName + '="' + event + '" ';
-            }
-            return '' +
-                '<label>' +
-                '   <span class="title">' + title + '</span>' +
-                '   <span class="input-text-wrap">' +
-                '       <input type="checkbox" name="' + name + '" value="true" ' + checked + ' title="' + description + '" ' + eventsString + '>' +
-                '   </span>' +
-                '</label>'
-                ;
-        },
-
-        getSelectInputPlayer: function (title, name, options, values, events) {
-            let multiple = name.endsWith('[]') ? ' multiple="multiple"' : '';
-            let eventsString = '';
-            if (!Array.isArray(values)) {
-                values = [values];
-            }
-            for (let [eventName, event] of Object.entries(events)) {
-                eventsString += eventName + '="' + event + '" ';
-            }
-            let html =
-                '<label>' +
-                '   <span class="title">' + title + '</span>' +
-                '   <span class="input-text-wrap">'
-            ;
-            html += '<select name="' + name + '" style="width: 100%;" ' + eventsString + multiple + '>';
-            if (options instanceof Object) {
-                options = Object.values(options);
-            }
-            for (let i = 0; i < options.length; ++i) {
-                if (values.indexOf(options[i]) !== -1) {
-                    html += '<option selected="selected">' + options[i] + '</option>';
-                } else {
-                    html += '<option>' + options[i] + '</option>';
-                }
-            }
-            html += '</select>';
-            html +=
-                '   </span>' +
-                '</label>'
-            ;
-            return html;
-        },
-
-        onKeyDown: function () {
-            let $nameInput = event.path[0];
-            let editType = document.getElementById('edit-type').dataset.editType;
-            if (editType === 'edit') {
-                if (event.keyCode === 13) {
-                    creatureManager.saveEdit();
-                    event.preventDefault();
-                    return false;
-                } else {
-                    $nameInput.setCustomValidity('');
-                    $nameInput.reportValidity();
-                }
-            } else if (editType === 'customize') {
-                if (event.keyCode === 13) {
-                    creatureManager.saveCustomization();
-                    event.preventDefault();
-                    return false;
-                }
-            }
-        },
-
-        addTextValueContainer: function (value) {
-            document.getElementById('value_container').innerHTML =
-                '<div class="inline-edit-col">' +
-                '   <label>' +
-                '       <span class="title">Value</span>' +
-                '       <span class="input-text-wrap">' +
-                '            <input type="text" name="value" value="' + value + '" autocomplete="off" data-old-value="' + value + '">' +
-                '       </span>' +
-                '   </label>' +
-                '</div>'
-            ;
-        },
-
-        addSelectValueContainer: function (options, tags) {
-            let tr = document.getElementById('model_' + this.current);
-            let properties = JSON.parse(tr.dataset.properties);
-            let selected = properties.value;
-            if (selected === undefined || !Array.isArray(selected)) {
-                selected = [];
-            }
-            selected.forEach(function (value) {
-                if (options.indexOf(value) === -1) {
-                    options.push(value);
-                }
-            });
-            document.getElementById('value_container').innerHTML = this.getSelectInputPlayer('Options', 'options[]', options, selected, []);
-            jQuery('[name="options[]"]').select2({
-                tags: tags,
-                tokenSeparators: [';']
-            });
-        },
-
-        removeValueContainer: function () {
-            document.getElementById('value_container').innerHTML = '';
-        },
-
-        switchNamePlayerToSelect: function () {
-            let container = document.getElementById('name_container');
-            let value = container.querySelector('[name="name"]').value;
-            let newPlayer = document.createElement('div');
-            newPlayer.innerHTML = this.getSelectInputPlayer('Name', 'name', params.roles, value, []);
-            container.parentElement.replaceChild(newPlayer, container);
-        },
-
-        switchNamePlayerToInput: function () {
-            let container = document.getElementById('name_container');
-            let value = container.querySelector('[name="name"]').value;
-            let newPlayer = document.createElement('div');
-            newPlayer.innerHTML = this.getInputPlayer('Name', 'name', value, 'text', []);
-            container.parentElement.replaceChild(newPlayer, container);
-        },
-    },
-
     addNew: function (containerId) {
         let container = document.getElementById(containerId);
         let tr = document.createElement('tr');
         let properties = {
             name: '',
-            level: '0',
-            hp: '10',
+            maxHp: '1D8',
+            url: '',
         };
 
         tr.setAttribute('id', 'model_' + null);
@@ -172,17 +18,14 @@ let creatureManager = {
         generalFunctions.removeElement(document.getElementById('no-items'));
         container.appendChild(tr);
 
-        console.log(tr);
-        console.log(container);
-
         this.edit(null);
         tr.querySelector('[name="name"]').focus();
     },
 
     edit: function (id) {
         this.closeEditor();
-        this.editor.current = id;
-        this.editor.isOpen = true;
+        generalFunctions.editor.current = id;
+        generalFunctions.editor.isOpen = true;
         let tr = document.getElementById("model_" + id);
         let properties = jQuery.parseJSON(tr.dataset.properties);
         console.log(properties);
@@ -193,17 +36,17 @@ let creatureManager = {
             '   <fieldset class="inline-edit-col" style="width: 30%;">' +
             '      <legend class="inline-edit-legend" id="edit-type" data-edit-type="edit">Edit Player</legend>'
         ;
-        html += this.editor.getInputPlayer('Name', 'name', properties.name, 'text', []);
+        html += generalFunctions.editor.getInputField('Name', 'name', properties.name, 'text', {'onkeydown': 'generalFunctions.editor.onKeyDown()'});
         html +=
             '   </fieldset>' +
             '   <fieldset class="inline-edit-col" style="width: 30%; margin: 32px 2% 0;">'
         ;
-        html += this.editor.getInputPlayer('Level', 'level', properties.level, 'number', []);
+        html += generalFunctions.editor.getDiceInputField('Max HP', 'maxHp', properties.maxHp);
         html +=
             '   </fieldset>' +
             '   <fieldset class="inline-edit-col" style="width: 30%; margin: 32px 2% 0;">'
         ;
-        html += this.editor.getInputPlayer('HP', 'hp', properties.hp, 'number', []);
+        html += generalFunctions.editor.getInputField('URL', 'url', properties.url, 'text', {'onkeydown': 'generalFunctions.editor.onKeyDown()'});
         html +=
             '   </fieldset>' +
             '   <fieldset id="value_container" class="inline-edit-col" style="width: 30%; margin-top: 32px;">' +
@@ -246,35 +89,17 @@ let creatureManager = {
         }
     },
 
-    typeChanged: function () {
-        let type = jQuery('#model_' + this.editor.current + ' select[name=type]').val();
-        if (type === 'role_checkbox') {
-            this.editor.switchNamePlayerToSelect();
-        } else {
-            this.editor.switchNamePlayerToInput();
-        }
-        if (type === 'hidden') {
-            this.editor.addTextValueContainer('');
-        } else if (type === 'select') {
-            this.editor.addSelectValueContainer([], true);
-        } else if (type === 'role_select') {
-            this.editor.addSelectValueContainer(params.roles, false);
-        } else {
-            this.editor.removeValueContainer();
-        }
-    },
-
     cancel: function () {
         this.closeEditor();
     },
 
     saveEdit: function () {
-        let tr = document.getElementById('model_' + this.editor.current);
-        let id = this.editor.current;
+        let tr = document.getElementById('model_' + generalFunctions.editor.current);
+        let id = generalFunctions.editor.current;
         let properties = JSON.parse(tr.dataset.properties);
         properties.name = tr.querySelector('input[name="name"]').value;
-        properties.level = tr.querySelector('input[name="level"]').value;
-        properties.hp = tr.querySelector('input[name="hp"]').value;
+        properties.maxHp = tr.querySelector('input[name="maxHpA"]').value + 'D' + tr.querySelector('select[name="maxHpD"]').value;
+        properties.url = tr.querySelector('input[name="url"]').value;
         tr.dataset.properties = JSON.stringify(properties);
         jQuery.post(
             params.urls.ajax,
@@ -282,14 +107,14 @@ let creatureManager = {
                 action: params.actions.save,
                 id: id,
                 name: properties.name,
-                level: properties.level,
-                hp: properties.hp,
+                maxHp: properties.maxHp,
+                url: properties.url,
             },
             function (data) {
                 if (generalFunctions.ajaxResponse(data)) {
                     let id = JSON.parse(data)['id'];
                     tr.setAttribute('id', 'model_' + id);
-                    creatureManager.editor.current = id;
+                    generalFunctions.editor.current = id;
                     creatureManager.closeEditor();
                 }
             }
@@ -297,10 +122,10 @@ let creatureManager = {
     },
 
     closeEditor: function () {
-        if (this.editor.isOpen === false) {
+        if (generalFunctions.editor.isOpen === false) {
             return;
         }
-        let id = this.editor.current;
+        let id = generalFunctions.editor.current;
         let tr = document.getElementById('model_' + id);
         if (id === null) {
             let container = tr.parentElement;
@@ -308,8 +133,8 @@ let creatureManager = {
             if (container.childElementCount === 0) {
                 container.innerHTML = this.getEmptyRow();
             }
-            this.editor.current = null;
-            this.editor.isOpen = false;
+            generalFunctions.editor.current = null;
+            generalFunctions.editor.isOpen = false;
             return;
         }
         let properties = JSON.parse(tr.dataset.properties);
@@ -327,12 +152,12 @@ let creatureManager = {
             '       <span class="trash"><a href="javascript:void(0)" onclick="creatureManager.deleteRow(\'' + id + '\')" class="submitdelete">Trash</a></span>' +
             '   </div>' +
             '</td>' +
-            '<td>' + properties.level + '</td>' +
-            '<td>' + properties.hp + '</td>'
+            '<td>' + properties.maxHp + '</td>' +
+            '<td>' + properties.url + '</td>'
         ;
         tr.setAttribute('class', 'inactive');
-        this.editor.current = null;
-        this.editor.isOpen = false;
+        generalFunctions.editor.current = null;
+        generalFunctions.editor.isOpen = false;
     },
 
     getEmptyRow: function () {

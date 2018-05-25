@@ -230,8 +230,9 @@ abstract class DD_Encounters
 
     public static function enquireCreatureManagerScripts()
     {
-        wp_enqueue_script('mp-dd-player-manager', self::URL . '/js/player-manager.js', ['jquery']);
-        wp_localize_script('mp-dd-player-manager', 'mp_ssv_player_manager_params', [
+        wp_enqueue_script('mp-dd-creature-manager', self::URL . '/js/creature-manager.js', ['jquery']);
+        wp_localize_script(
+            'mp-dd-creature-manager', 'mp_ssv_creature_manager_params', [
             'urls'    => [
                 'plugins'  => plugins_url(),
                 'ajax'     => admin_url('admin-ajax.php'),
@@ -239,8 +240,8 @@ abstract class DD_Encounters
                 'basePath' => ABSPATH,
             ],
             'actions' => [
-                'save'   => 'mp_dd_encounters_save_player',
-                'delete' => 'mp_dd_encounters_delete_player',
+                'save'   => 'mp_dd_encounters_save_creature',
+                'delete' => 'mp_dd_encounters_delete_creature',
             ],
         ]);
     }

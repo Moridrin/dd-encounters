@@ -12,9 +12,9 @@ if (!defined('ABSPATH')) {
 class Creature extends Model
 {
     #region Class
-    public static function create(string $name, int $level, int $hp): ?int
+    public static function create(string $name, string $maxHp, string $url): ?int
     {
-        return parent::_create(['c_name' => $name, 'c_maxHp' => $level, 'c_url' => $hp]);
+        return parent::_create(['c_name' => $name, 'c_maxHp' => $maxHp, 'c_url' => $url]);
     }
 
     /**
@@ -54,8 +54,8 @@ class Creature extends Model
     {
         return [
             'c_name'  => 'Name',
-            'c_maxHp' => 'Level',
-            'c_url'   => 'HP',
+            'c_maxHp' => 'Max HP',
+            'c_url'   => 'URL',
         ];
     }
 
@@ -88,25 +88,25 @@ class Creature extends Model
         return $this;
     }
 
-    public function getMaxHp(): int
+    public function getMaxHp(): string
     {
         return $this->row['c_maxHp'];
     }
 
-    public function setMaxHp(int $level): self
+    public function setMaxHp(string $maxHp): self
     {
-        $this->row['c_maxHp'] = $level;
+        $this->row['c_maxHp'] = $maxHp;
         return $this;
     }
 
-    public function getUrl(): int
+    public function getUrl(): string
     {
         return $this->row['c_url'];
     }
 
-    public function setUrl(int $hp): self
+    public function setUrl(string $url): self
     {
-        $this->row['c_url'] = $hp;
+        $this->row['c_url'] = $url;
         return $this;
     }
 
@@ -133,13 +133,13 @@ class Creature extends Model
         return [
             [
                 'spanClass' => '',
-                'onclick'   => 'playerManager.edit(\'' . $this->getId() . '\')',
+                'onclick'   => 'creatureManager.edit(\'' . $this->getId() . '\')',
                 'linkClass' => 'edit',
                 'linkText'  => 'Edit',
             ],
             [
                 'spanClass' => 'trash',
-                'onclick'   => 'playerManager.deleteRow(\'' . $this->getId() . '\')',
+                'onclick'   => 'creatureManager.deleteRow(\'' . $this->getId() . '\')',
                 'linkClass' => 'submitdelete',
                 'linkText'  => 'Trash',
             ],
