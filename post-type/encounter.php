@@ -71,7 +71,7 @@ function mp_dd_encounters_category_taxonomy()
 {
     register_taxonomy(
         'encounter_category',
-        'encounters',
+        'encounter',
         [
             'hierarchical' => true,
             'label'        => 'Encounter Categories',
@@ -84,7 +84,7 @@ function mp_dd_encounters_category_taxonomy()
     );
     register_taxonomy(
         'encounter_creatures',
-        'encounters',
+        'encounter',
         [
             'label'     => 'Creatures',
             'query_var' => true,
@@ -147,7 +147,7 @@ function category_edit_form_fields(WP_Term $term)
  */
 function mp_dd_encounters_meta_boxes()
 {
-    // add_meta_box('dd_encounter_creatures', 'Creatures', 'dd_encounter_creatures', 'encounters', 'side', 'default');
+    add_meta_box('dd_encounter_creatures', 'Creatures', 'dd_encounter_creatures', 'encounter', 'side', 'default');
 }
 
 add_action('add_meta_boxes', 'mp_dd_encounters_meta_boxes');
