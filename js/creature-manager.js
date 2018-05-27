@@ -36,17 +36,17 @@ let creatureManager = {
             '   <fieldset class="inline-edit-col" style="width: 30%;">' +
             '      <legend class="inline-edit-legend" id="edit-type" data-edit-type="edit">Edit Player</legend>'
         ;
-        html += generalFunctions.editor.getInputField('Name', 'name', properties.name, 'text', {'onkeydown': 'generalFunctions.editor.onKeyDown()'});
+        html += generalFunctions.editor.getInputField('Name', 'name', properties.name, 'text', {'onkeydown': 'creatureManager.onKeyDown()'});
         html +=
             '   </fieldset>' +
             '   <fieldset class="inline-edit-col" style="width: 30%; margin: 32px 2% 0;">'
         ;
-        html += generalFunctions.editor.getDiceInputField('Max HP', 'maxHp', properties.maxHp);
+        html += generalFunctions.editor.getDiceInputField('Max HP', 'maxHp', properties.maxHp, {'onkeydown': 'creatureManager.onKeyDown()'});
         html +=
             '   </fieldset>' +
             '   <fieldset class="inline-edit-col" style="width: 30%; margin: 32px 2% 0;">'
         ;
-        html += generalFunctions.editor.getInputField('URL', 'url', properties.url, 'text', {'onkeydown': 'generalFunctions.editor.onKeyDown()'});
+        html += generalFunctions.editor.getInputField('URL', 'url', properties.url, 'text', {'onkeydown': 'creatureManager.onKeyDown()'});
         html +=
             '   </fieldset>' +
             '   <fieldset id="value_container" class="inline-edit-col" style="width: 30%; margin-top: 32px;">' +
@@ -166,5 +166,13 @@ let creatureManager = {
             '    <td class="colspanchange" colspan="8">No Items found</td>' +
             '</tr>'
             ;
+    },
+
+    onKeyDown: function () {
+        if (event.keyCode === 13) {
+            event.preventDefault();
+            this.saveEdit();
+            return false;
+        }
     },
 };
