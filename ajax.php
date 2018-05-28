@@ -43,7 +43,7 @@ function mp_dd_encounters_delete_player()
 {
     $id = BaseFunctions::sanitize($_POST['id'], 'int');
     Player::deleteByIds([$id]);
-    wp_die();
+    wp_die(json_encode(['success' => true]));
 }
 
 add_action('wp_ajax_mp_dd_encounters_delete_player', 'mp_dd_encounters_delete_player');
@@ -80,8 +80,8 @@ add_action('wp_ajax_mp_dd_encounters_save_creature', 'mp_dd_encounters_save_crea
 function mp_dd_encounters_delete_creature()
 {
     $id = BaseFunctions::sanitize($_POST['id'], 'int');
-    Player::deleteByIds([$id]);
-    wp_die();
+    Creature::deleteByIds([$id]);
+    wp_die(json_encode(['success' => true]));
 }
 
 add_action('wp_ajax_mp_dd_encounters_delete_creature', 'mp_dd_encounters_delete_creature');

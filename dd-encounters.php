@@ -25,3 +25,11 @@ require_once 'models/Creature.php';
 require_once 'DD_Encounters.php';
 require_once 'Options.php';
 require_once 'ajax.php';
+
+
+$data = file_get_contents('https://dl.dropboxusercontent.com/s/121t7xstyyeofxw/5e-SRD-Spells.json');
+$data = json_decode($data);
+\mp_general\base\BaseFunctions::var_export($data);
+$data = file_get_contents('https://dl.dropboxusercontent.com/s/iwz112i0bxp2n4a/5e-SRD-Monsters.json');
+$data = json_decode($data);
+\mp_general\base\BaseFunctions::var_export($data, true);
