@@ -17,7 +17,7 @@ function mp_dd_encounters_save_player()
     $level = BaseFunctions::sanitize($_POST['level'], 'int');
     $hp    = BaseFunctions::sanitize($_POST['hp'], 'int');
     if ($id === null) {
-        $id = Player::create($name, $level, $hp);
+        $id = Player::create($name, $level, $hp, 0);
         if ($id === null) {
             wp_die();
         }
@@ -59,20 +59,21 @@ function mp_dd_encounters_save_creature()
         if ($id === null) {
             wp_die();
         }
+    } else {
+        try {
+            $creature = Creature::findById($id);
+            $creature
+                ->setName($name)
+                ->setMaxHp($maxHp)
+                ->setUrl($url)
+                ->save()
+            ;
+        } catch (NotFoundException $e) {
+            SSV_Global::addError('Creature with ID "' . $id . '" not found.');
+            wp_die();
+        }
+        wp_die(json_encode(['success' => true, 'id' => $id]));
     }
-    try {
-        $creature = Creature::findById($id);
-        $creature
-            ->setName($name)
-            ->setMaxHp($maxHp)
-            ->setUrl($url)
-            ->save()
-        ;
-    } catch (NotFoundException $e) {
-        SSV_Global::addError('Player with ID "' . $id . '" not found.');
-        wp_die();
-    }
-    wp_die(json_encode(['id' => $id]));
 }
 
 add_action('wp_ajax_mp_dd_encounters_save_creature', 'mp_dd_encounters_save_creature', 10, 0);

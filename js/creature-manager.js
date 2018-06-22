@@ -41,7 +41,7 @@ let creatureManager = {
             '   </fieldset>' +
             '   <fieldset class="inline-edit-col" style="width: 30%; margin: 32px 2% 0;">'
         ;
-        html += generalFunctions.editor.getDiceInputField('Max HP', 'maxHp', properties.maxHp, {'onkeydown': 'creatureManager.onKeyDown()'});
+        html += generalFunctions.editor.getDiceInputField('Max HP', 'maxHp', properties.maxHp, {'onkeydown': 'creatureManager.onKeyDown()'}, {'addition': true});
         html +=
             '   </fieldset>' +
             '   <fieldset class="inline-edit-col" style="width: 30%; margin: 32px 2% 0;">'
@@ -63,7 +63,6 @@ let creatureManager = {
         jQuery('#model_' + id + ' select[name="type"]').select2({
             tags: true,
         });
-        this.typeChanged();
     },
 
     deleteRow: function (id) {
@@ -98,7 +97,7 @@ let creatureManager = {
         let id = generalFunctions.editor.current;
         let properties = JSON.parse(tr.dataset.properties);
         properties.name = tr.querySelector('input[name="name"]').value;
-        properties.maxHp = tr.querySelector('input[name="maxHpA"]').value + 'D' + tr.querySelector('select[name="maxHpD"]').value;
+        properties.maxHp = tr.querySelector('input[name="maxHpC"]').value + 'D' + tr.querySelector('select[name="maxHpD"]').value + '+' + tr.querySelector('input[name="maxHpA"]').value;
         properties.url = tr.querySelector('input[name="url"]').value;
         tr.dataset.properties = JSON.stringify(properties);
         jQuery.post(

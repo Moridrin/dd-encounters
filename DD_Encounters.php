@@ -42,7 +42,7 @@ abstract class DD_Encounters
     public static function deactivate($network_wide = false)
     {
         if (is_multisite() && $network_wide) {
-            SSV_Global::runFunctionOnAllSites([self::class, 'deactivate']);
+            SSV_Global::runFunctionOnAllSites([self::class, 'cleanupBlog']);
         } else {
             self::cleanupBlog();
         }
@@ -223,7 +223,7 @@ abstract class DD_Encounters
                 break;
         }
         global $post_type;
-        if ($post_type === 'encounters') {
+        if ($post_type === 'encounter') {
             self::enquireEncounterEditorScripts();
         }
     }

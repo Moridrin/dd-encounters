@@ -12,15 +12,16 @@ if (!defined('ABSPATH')) {
 class Player extends Model
 {
     #region Class
-    public static function create(string $name, int $level, int $hp): ?int
+    public static function create(string $name, int $level, int $hp, int $postId): ?int
     {
-        return parent::_create(['p_name' => $name, 'p_level' => $level, 'p_hp' => $hp]);
+        return parent::_create(['p_name' => $name, 'p_level' => $level, 'p_hp' => $hp, 'p_postId' => $postId]);
     }
 
     /**
      * @param string $orderBy
      * @param string $order
      * @param string $key
+     *
      * @return Player[]
      */
     public static function getAll(string $orderBy = 'id', string $order = 'ASC', string $key = 'id'): array
@@ -30,6 +31,7 @@ class Player extends Model
 
     /**
      * @param int $id
+     *
      * @return Player
      * @throws \mp_general\exceptions\NotFoundException
      */
@@ -51,9 +53,10 @@ class Player extends Model
     public static function getTableColumns(): array
     {
         return [
-            'p_name'  => 'Name',
-            'p_level' => 'Level',
-            'p_hp'    => 'HP',
+            'p_name'   => 'Name',
+            'p_level'  => 'Level',
+            'p_hp'     => 'HP',
+            'p_postId' => 'Post ID',
         ];
     }
 
@@ -64,7 +67,7 @@ class Player extends Model
 
     protected static function _getDatabaseFields(): array
     {
-        return ['`p_name` VARCHAR(50)', '`p_level` INT NOT NULL', '`p_hp` INT NOT NULL'];
+        return ['`p_name` VARCHAR(50)', '`p_level` INT NOT NULL', '`p_hp` INT NOT NULL', '`p_postId` INT NULL'];
     }
 
     public static function getDatabaseCreateQuery(int $blogId = null): string
@@ -108,21 +111,34 @@ class Player extends Model
         return $this;
     }
 
+    public function getPostId(): int
+    {
+        return $this->row['postId'];
+    }
+
+    public function setPostId(int $postId): self
+    {
+        $this->row['postId'] = $postId;
+        return $this;
+    }
+
     public function getData(): array
     {
         return [
-            'name'  => $this->getName(),
-            'level' => $this->getLevel(),
-            'hp'    => $this->getHp(),
+            'name'   => $this->getName(),
+            'level'  => $this->getLevel(),
+            'hp'     => $this->getHp(),
+            'postId' => $this->getPostId(),
         ];
     }
 
     public function getTableRow(): array
     {
         return [
-            'p_name'  => $this->row['p_name'],
-            'p_level' => $this->row['p_level'],
-            'p_hp'    => $this->row['p_hp'],
+            'p_name'   => $this->row['p_name'],
+            'p_level'  => $this->row['p_level'],
+            'p_hp'     => $this->row['p_hp'],
+            'p_postId' => $this->row['p_postId'],
         ];
     }
 

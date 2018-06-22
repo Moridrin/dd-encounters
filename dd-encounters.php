@@ -27,9 +27,16 @@ require_once 'Options.php';
 require_once 'ajax.php';
 
 
-$data = file_get_contents('https://dl.dropboxusercontent.com/s/121t7xstyyeofxw/5e-SRD-Spells.json');
-$data = json_decode($data);
-\mp_general\base\BaseFunctions::var_export($data);
-$data = file_get_contents('https://dl.dropboxusercontent.com/s/iwz112i0bxp2n4a/5e-SRD-Monsters.json');
-$data = json_decode($data);
-\mp_general\base\BaseFunctions::var_export($data, true);
+$monsters = file_get_contents('https://dl.dropboxusercontent.com/s/iwz112i0bxp2n4a/5e-SRD-Monsters.json');
+// $monsters = file_get_contents('https://dl.dropboxusercontent.com/s/121t7xstyyeofxw/5e-SRD-Spells.json');
+$monsters = json_decode($monsters, true);
+$tmp      = array_keys($monsters[0]);
+
+foreach ($monsters as $monster) {
+    if (array_keys($monster) != $tmp) {
+        $tmp = array_unique(array_merge($tmp, array_keys($monster)));
+    }
+}
+// \mp_general\base\BaseFunctions::var_export($tmp, true);
+// $monsters = json_decode($monsters);
+// \mp_general\base\BaseFunctions::var_export($monsters, true);

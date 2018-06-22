@@ -20,9 +20,10 @@ abstract class Options
 
     public static function setupSiteSpecificMenu()
     {
-        add_menu_page('Creatures', 'Creatures', 'edit_creatures', 'dd_creatures', '', 'dashicons-feedback');
-        add_submenu_page('dd_creatures', 'Creatures', 'Creatures', 'edit_creatures', 'dd_creatures', [self::class, 'showCreaturesList']);
-        add_submenu_page('dd_creatures', 'Players', 'Players', 'edit_players', 'dd_players', [self::class, 'showPlayersList']);
+        // add_menu_page('Creatures', 'Creatures', 'edit_creatures', 'dd_creatures', '', 'dashicons-feedback');
+        add_submenu_page('edit.php?post_type=encounter', 'Creatures', 'Creatures', 'edit_creatures', 'dd_creatures', [self::class, 'showCreaturesList']);
+        add_submenu_page('edit.php?post_type=encounter', 'Players', 'Players', 'edit_players', 'dd_players', [self::class, 'showPlayersList']);
+        // remove_submenu_page('edit.php?post_type=encounter', 'edit-tags.php?taxonomy=encounter_creatures&amp;post_type=encounter');
     }
 
     public static function showPlayersList()

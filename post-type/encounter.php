@@ -1,11 +1,24 @@
 <?php
 
+use dd_encounters\models\Creature;
 use dd_encounters\models\Player;
 use mp_general\base\BaseFunctions;
 
 if (!defined('ABSPATH')) {
     exit;
 }
+
+
+//Custom Autocomplete
+add_action('wp_ajax_nopriv_get_listing_names', 'ajax_listings');
+add_action('wp_ajax_get_listing_names', 'ajax_listings');
+
+function ajax_listings()
+{
+    echo json_encode(['test' => 'Test', 'bla' => 'bly']);
+    wp_die();
+}
+
 
 /**
  * This method initializes the post category functionality for Encounters
@@ -82,124 +95,107 @@ function mp_dd_encounters_category_taxonomy()
             ],
         ]
     );
-    register_taxonomy(
-        'encounter_creatures',
-        'encounter',
-        [
-            'label'     => 'Creatures',
-            'query_var' => true,
-            'rewrite'   => [
-                'slug'       => 'encounter_creatures',
-                'with_front' => false,
-            ],
-        ]
-    );
+    // register_taxonomy(
+    //     'encounter_creatures',
+    //     'encounter',
+    //     [
+    //         'label'     => 'Creatures',
+    //         'query_var' => true,
+    //         'rewrite'   => [
+    //             'slug'       => 'encounter_creatures',
+    //             'with_front' => false,
+    //         ],
+    //     ]
+    // );
 }
 
 add_action('init', 'mp_dd_encounters_category_taxonomy');
-
-function category_edit_form_fields(WP_Term $term)
-{
-    \mp_general\base\BaseFunctions::var_export($term);
-    ?>
-    <tr class="form-field">
-        <th valign="top" scope="row">
-            <label for="level">CR</label>
-        </th>
-        <td>
-            <input type="number" id="level" name="level"/>
-        </td>
-    </tr>
-    <tr class="form-field">
-        <th valign="top" scope="row">
-            <label for="hp">HP</label>
-        </th>
-        <td>
-            <input type="number" id="hp" name="hp" value="<?= get_option('encounter_creatures_' . $termId . '_level') ?>"/>
-        </td>
-    </tr>
-    <?php
-}
-
-// add_action('encounter_creatures_edit_form_fields','category_edit_form_fields');
-// add_action('encounter_creatures_add_form_fields', 'category_edit_form_fields');
-
-// function save_taxonomy_custom_meta($termId)
-// {
-//     if ($_POST['taxonomy'] !== 'encounter_creatures') {
-//         return;
-//     }
-//     $term = get_term($termId);
-//     $term->description = json_encode(
-//         [
-//             'level' => BaseFunctions::sanitize($_POST['level'], 'int'),
-//             'hp' => BaseFunctions::sanitize($_POST['hp'], 'int'),
-//         ]
-//     );
-//     wp_update_term($termId, 'encounter_creatures', $term->to_array());
-// }
-//
-// add_action('edited_encounter_creatures', 'save_taxonomy_custom_meta');
-// add_action('create_encounter_creatures', 'save_taxonomy_custom_meta');
 
 /**
  * This method adds the custom Meta Boxes
  */
 function mp_dd_encounters_meta_boxes()
 {
+    add_meta_box('dd_encounter_players', 'Players', 'dd_encounter_players', 'encounter', 'side', 'default');
     add_meta_box('dd_encounter_creatures', 'Creatures', 'dd_encounter_creatures', 'encounter', 'side', 'default');
 }
 
 add_action('add_meta_boxes', 'mp_dd_encounters_meta_boxes');
 
-function dd_encounter_creatures()
+function dd_encounter_players()
 {
     global $post;
+    $players          = Player::getAll();
+    $activePlayersIds = get_post_meta($post->ID, 'activePlayers', true);
+    if (!is_array($activePlayersIds)) {
+        $activePlayersIds = array_column($players, 'id');
+    }
     ?>
-    <ul id="fieldsList">
-        <?php foreach (Player::getAll() as $player): ?>
-            <li>
-                <span><?= BaseFunctions::escape($player->getName(), 'html') ?></span>
-            </li>
+    <table width="100%">
+        <tr>
+            <th style="text-align: left;">Active</th>
+            <th>Name</th>
+        </tr>
+        <?php foreach ($players as $player): ?>
+            <tr>
+                <td>
+                    <input
+                            type="checkbox"
+                            name="activePlayers[]"
+                            value="<?= $player->getId() ?>"
+                            title="<?= $player->getName() ?> is in this combat."
+                        <?= checked(in_array($player->getId(), $activePlayersIds)) ?>
+                    >
+                </td>
+                <td style="text-align: center;"><?= BaseFunctions::escape($player->getName(), 'html') ?></td>
+            </tr>
         <?php endforeach; ?>
-    </ul>
-    <div id="encounter_creature-adder" class="wp-hidden-children">
-        <a href="javascript:void(0)" onclick="encounterEditor.show()" style="font-weight: 600;">+ Add Creature</a>
-        <p id="creatureAddForm" class="category-add" style="display: none;">
-            <label for="new_encounter_creature"></label>
-            <input type="text" name="new_encounter_creature_name" id="new_encounter_creature"
-                   placeholder="Creature Name">
-            <input type="number" name="new_encounter_creature_level" id="new_encounter_creature" placeholder="Level"
-                   style="width: 50%; margin: 0 -1px 1em;">
-            <input type="number" name="new_encounter_creature_hp" id="new_encounter_creature" placeholder="HP"
-                   style="width: 50%; margin: 0 -1px 1em;">
-            <input type="button" id="addCreatureButton" class="button category-add-submit" value="Add New Creature">
-        </p>
-    </div>
+    </table>
     <?php
 }
 
-function mp_dd_encounters_save_meta($post_id): int
+function dd_encounter_creatures()
 {
-    if (!current_user_can('edit_post', $post_id)) {
-        return $post_id;
+    global $post;
+    $creatures       = Creature::getAll();
+    $activeCreatures = get_post_meta($post->ID, 'creatures', true);
+    if (!is_array($activeCreatures)) {
+        $activeCreatures = array_column($creatures, 'id');
     }
-    if (isset($_POST['registration'])) {
-        update_post_meta($post_id, 'registration',
-                         SSV_General::sanitize($_POST['registration'], ['disabled', 'members_only', 'everyone']));
-    }
-    if (isset($_POST['start'])) {
-        update_post_meta($post_id, 'start', SSV_General::sanitize($_POST['start'], 'datetime'));
-    }
-    if (isset($_POST['end'])) {
-        update_post_meta($post_id, 'end', SSV_General::sanitize($_POST['end'], 'datetime'));
-    }
-    if (isset($_POST['location'])) {
-        update_post_meta($post_id, 'location', SSV_General::sanitize($_POST['location'], 'text'));
-    }
-
-//    Form::saveEditorFromPost();
-    return $post_id;
+    ?>
+    <table width="100%">
+        <tr>
+            <th style="text-align: left;">Count</th>
+            <th>Name</th>
+        </tr>
+        <?php foreach ($creatures as $creature): ?>
+            <tr>
+                <td>
+                    <input type="hidden" value="<?= $creature->getId() ?>" name="creature[<?= $creature->getId() ?>][id]">
+                    <input
+                            type="number"
+                            min="0"
+                            name="creature[<?= $creature->getId() ?>][count]"
+                            value="<?= $activeCreatures[$creature->getId()]['count'] ?? 0 ?>"
+                            style="width: 50px;"
+                            title="<?= $creature->getName() ?> is in this combat."
+                        <?= checked(in_array($creature->getId(), $activeCreatures)) ?>
+                    >
+                </td>
+                <td style="text-align: center;"><?= BaseFunctions::escape($creature->getName(), 'html') ?></td>
+            </tr>
+        <?php endforeach; ?>
+    </table>
+    <?php
 }
 
-add_action('save_post_encounters', 'mp_dd_encounters_save_meta');
+function mp_dd_encounter_save_meta($postId): int
+{
+    if (!current_user_can('edit_post', $postId)) {
+        return $postId;
+    }
+    update_post_meta($postId, 'activePlayers', $_POST['activePlayers'] ?? []);
+    return $postId;
+}
+
+add_action('save_post_encounter', 'mp_dd_encounter_save_meta');
