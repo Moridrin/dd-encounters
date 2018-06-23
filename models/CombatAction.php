@@ -54,15 +54,7 @@ class CombatAction extends Model
      */
     public static function findByEncounterId(int $encounterId, string $orderBy = 'id', string $order = 'ASC'): array
     {
-        $results = parent::_find('ca_encounterId = ' . $encounterId, $orderBy, $order);
-        if ($results === null) {
-            return [];
-        }
-        $fields = [];
-        foreach ($results as $row) {
-            $fields[$row['id']] = new static($row);
-        }
-        return $fields;
+        return parent::_find('ca_encounterId = ' . $encounterId, $orderBy, $order);
     }
 
     /**
@@ -75,15 +67,7 @@ class CombatAction extends Model
      */
     public static function findByEncounterIdAndAffectedCreature(int $encounterId, string $affectedCreature, string $orderBy = 'id', string $order = 'ASC'): array
     {
-        $results = parent::_find('ca_encounterId = ' . $encounterId . ' AND JSON_SEARCH(ca_affectedCreatures, "all", "' . $affectedCreature . '") IS NOT NULL', $orderBy, $order);
-        if ($results === null) {
-            return [];
-        }
-        $fields = [];
-        foreach ($results as $row) {
-            $fields[$row['id']] = new static($row);
-        }
-        return $fields;
+        return parent::_find('ca_encounterId = ' . $encounterId . ' AND JSON_SEARCH(ca_affectedCreatures, "all", "' . $affectedCreature . '") IS NOT NULL', $orderBy, $order);
     }
 
     public static function deleteByIds(array $ids): bool

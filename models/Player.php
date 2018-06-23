@@ -12,9 +12,9 @@ if (!defined('ABSPATH')) {
 class Player extends Model
 {
     #region Class
-    public static function create(string $name, int $level, int $hp, int $postId): ?int
+    public static function create(string $name, int $level, int $hp, int $postId, int $initiative): ?int
     {
-        return parent::_create(['p_name' => $name, 'p_level' => $level, 'p_hp' => $hp, 'p_postId' => $postId]);
+        return parent::_create(['p_name' => $name, 'p_level' => $level, 'p_hp' => $hp, 'p_postId' => $postId, 'p_initiative' => $initiative]);
     }
 
     /**
@@ -67,7 +67,7 @@ class Player extends Model
 
     protected static function _getDatabaseFields(): array
     {
-        return ['`p_name` VARCHAR(50)', '`p_level` INT NOT NULL', '`p_hp` INT NOT NULL', '`p_postId` INT NULL'];
+        return ['`p_name` VARCHAR(50)', '`p_level` INT NOT NULL', '`p_hp` INT NOT NULL', '`p_postId` INT NULL', '`p_initiative` INT NOT NULL'];
     }
 
     public static function getDatabaseCreateQuery(int $blogId = null): string
@@ -113,22 +113,34 @@ class Player extends Model
 
     public function getPostId(): int
     {
-        return $this->row['postId'];
+        return $this->row['p_postId'];
     }
 
     public function setPostId(int $postId): self
     {
-        $this->row['postId'] = $postId;
+        $this->row['p_postId'] = $postId;
+        return $this;
+    }
+
+    public function getInitiative(): int
+    {
+        return $this->row['p_initiative'];
+    }
+
+    public function setInitiative(int $initiative): self
+    {
+        $this->row['p_initiative'] = $initiative;
         return $this;
     }
 
     public function getData(): array
     {
         return [
-            'name'   => $this->getName(),
-            'level'  => $this->getLevel(),
-            'hp'     => $this->getHp(),
-            'postId' => $this->getPostId(),
+            'name'       => $this->getName(),
+            'level'      => $this->getLevel(),
+            'hp'         => $this->getHp(),
+            'postId'     => $this->getPostId(),
+            'initiative' => $this->getInitiative(),
         ];
     }
 

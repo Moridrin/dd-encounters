@@ -159,31 +159,92 @@ function dd_encounter_creatures()
     global $post;
     $creatures       = Creature::getAll();
     $activeCreatures = get_post_meta($post->ID, 'creatures', true);
-    if (!is_array($activeCreatures)) {
-        $activeCreatures = array_column($creatures, 'id');
-    }
     ?>
-    <table width="100%">
+    <select id="monsterSelect" style="width: 100%;">
+        <option disabled selected="selected"></option>
+        <?php foreach ($creatures as $creature): ?>
+            <option value="<?= $creature->getId() ?>" <?= ($activeCreatures[$creature->getId()] ?? 0 > 0) ? 'disabled' : '' ?>><?= $creature->getName() ?></option>
+        <?php endforeach; ?>
+    </select>
+    <script>
+        jQuery(function ($) {
+            $(document).ready(function () {
+                let monsterSelect = $('#monsterSelect');
+                monsterSelect.select2({
+                    allowClear: true,
+                    placeholder: "Add Monster",
+                    tokenSeparators: [','],
+                });
+                monsterSelect.on('select2:select', function () {
+                    $('#availableCreatures #creatureRow_' + $(this).val()).appendTo('#selectedCreatures');
+                    let creatureCount = $('#creatureCount_' + $(this).val());
+                    creatureCount.val(1);
+                    creatureCount.prop('min', 1);
+                    this.options[this.selectedIndex].disabled = true;
+                    $(this).select2('destroy').select2();
+                    $(this).val(null).trigger('change');
+                });
+                $('.removeCreature').on('click', function () {
+                    $('#creatureRow_' + this.dataset.creatureId).appendTo('#availableCreatures');
+                    let creatureCount = $('#creatureCount_' + this.dataset.creatureId);
+                    creatureCount.val(0);
+                    creatureCount.prop('min', 0);
+                    $('#monsterSelect option[value="' + this.dataset.creatureId + '"]').prop('disabled', false);
+                    monsterSelect.select2('destroy').select2();
+                });
+            });
+        });
+    </script>
+    <table id="availableCreatures" style="display: none;">
+        <?php foreach ($creatures as $creature): ?>
+            <?php if ((int)($activeCreatures[$creature->getId()] ?? 0) === 0): ?>
+                <tr id="creatureRow_<?= $creature->getId() ?>">
+                    <td>
+                        <input
+                                id="creatureCount_<?= $creature->getId() ?>"
+                                type="number"
+                                min="0"
+                                name="creatures[<?= $creature->getId() ?>]"
+                                value="0"
+                                style="width: 50px;"
+                                title="<?= $creature->getName() ?> is in this combat."
+                            <?= checked(in_array($creature->getId(), $activeCreatures)) ?>
+                        >
+                    </td>
+                    <td style="text-align: center;"><?= BaseFunctions::escape($creature->getName(), 'html') ?></td>
+                    <td style="text-align: center;">
+                        <button type="button" style="border-radius: 10px;" class="removeCreature" data-creature-id="<?= $creature->getId() ?>">X</button>
+                    </td>
+                </tr>
+            <?php endif; ?>
+        <?php endforeach; ?>
+    </table>
+    <table id="selectedCreatures" width="100%">
         <tr>
             <th style="text-align: left;">Count</th>
             <th>Name</th>
+            <th></th>
         </tr>
         <?php foreach ($creatures as $creature): ?>
-            <tr>
-                <td>
-                    <input type="hidden" value="<?= $creature->getId() ?>" name="creature[<?= $creature->getId() ?>][id]">
-                    <input
-                            type="number"
-                            min="0"
-                            name="creature[<?= $creature->getId() ?>][count]"
-                            value="<?= $activeCreatures[$creature->getId()]['count'] ?? 0 ?>"
-                            style="width: 50px;"
-                            title="<?= $creature->getName() ?> is in this combat."
-                        <?= checked(in_array($creature->getId(), $activeCreatures)) ?>
-                    >
-                </td>
-                <td style="text-align: center;"><?= BaseFunctions::escape($creature->getName(), 'html') ?></td>
-            </tr>
+            <?php if ($activeCreatures[$creature->getId()] ?? 0 > 0): ?>
+                <tr id="creatureRow_<?= $creature->getId() ?>">
+                    <td>
+                        <input
+                                type="number"
+                                min="1"
+                                name="creatures[<?= $creature->getId() ?>]"
+                                value="<?= $activeCreatures[$creature->getId()] ?>"
+                                style="width: 50px;"
+                                title="<?= $creature->getName() ?> is in this combat."
+                            <?= checked(in_array($creature->getId(), $activeCreatures)) ?>
+                        >
+                    </td>
+                    <td style="text-align: center;"><?= BaseFunctions::escape($creature->getName(), 'html') ?></td>
+                    <td style="text-align: center;">
+                        <button type="button" style="border-radius: 10px;" class="removeCreature" data-creature-id="<?= $creature->getId() ?>">X</button>
+                    </td>
+                </tr>
+            <?php endif; ?>
         <?php endforeach; ?>
     </table>
     <?php
@@ -195,6 +256,7 @@ function mp_dd_encounter_save_meta($postId): int
         return $postId;
     }
     update_post_meta($postId, 'activePlayers', $_POST['activePlayers'] ?? []);
+    update_post_meta($postId, 'creatures', array_filter($_POST['creatures']) ?? []);
     return $postId;
 }
 

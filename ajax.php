@@ -50,12 +50,13 @@ add_action('wp_ajax_mp_dd_encounters_delete_player', 'mp_dd_encounters_delete_pl
 
 function mp_dd_encounters_save_creature()
 {
-    $id    = BaseFunctions::sanitize($_POST['id'], 'int');
-    $name  = BaseFunctions::sanitize($_POST['name'], 'text');
-    $maxHp = BaseFunctions::sanitize($_POST['maxHp'], 'text');
-    $url   = BaseFunctions::sanitize($_POST['url'], 'text');
+    $id                 = BaseFunctions::sanitize($_POST['id'], 'int');
+    $name               = BaseFunctions::sanitize($_POST['name'], 'text');
+    $hp                 = BaseFunctions::sanitize($_POST['hp'], 'text');
+    $initiativeModifier = BaseFunctions::sanitize($_POST['initiativeModifier'], 'int');
+    $url                = BaseFunctions::sanitize($_POST['url'], 'text');
     if ($id === null) {
-        $id = Creature::create($name, $maxHp, $url);
+        $id = Creature::create($name, $hp, $initiativeModifier, $url);
         if ($id === null) {
             wp_die();
         }
@@ -64,7 +65,8 @@ function mp_dd_encounters_save_creature()
             $creature = Creature::findById($id);
             $creature
                 ->setName($name)
-                ->setMaxHp($maxHp)
+                ->setHp($hp)
+                ->setInitiativeModifier($initiativeModifier)
                 ->setUrl($url)
                 ->save()
             ;

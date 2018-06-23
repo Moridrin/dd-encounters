@@ -3,6 +3,7 @@
 namespace dd_encounters;
 
 use dd_encounters\models\CombatAction;
+use dd_encounters\models\CombatCreature;
 use dd_encounters\models\Creature;
 use dd_encounters\models\Player;
 use Exception;
@@ -19,6 +20,17 @@ abstract class DD_Encounters
     const URL  = DD_ENCOUNTERS_URL;
 
     const CREATURE_CREATE_ADMIN_REFERER = 'dd_encounters__creature_create_admin_referer';
+
+    /**
+     * @param bool $networkWide
+     *
+     * @throws \Exception
+     */
+    public static function CLEAN_INSTALL(bool $networkWide = false): void
+    {
+        self::deactivate($networkWide);
+        self::setup($networkWide);
+    }
 
     /**
      * @param $network_wide
@@ -102,16 +114,19 @@ abstract class DD_Encounters
         }
 
 
-        $creatureTerms = wp_get_post_terms($post->ID, 'encounter_creatures');
-        $combatActions = CombatAction::findByEncounterId($post->ID);
+        $creatureCounts = get_post_meta($post->ID, 'creatures', true);
+        $combatActions  = CombatAction::findByEncounterId($post->ID);
         if (empty($combatActions)) {
-            return self::setupEncounter($creatureTerms);
+            return self::setupCreatures($creatureCounts);
         }
+        exit;
 
 
-        uasort($creatures, function ($creatureA, $creatureB) {
+        uasort(
+            $creatureCounts, function ($creatureA, $creatureB) {
             return $creatureB['initiative'] - $creatureA['initiative'];
-        });
+        }
+        );
 
         if (!$setup && BaseFunctions::isValidPOST(null)) {
             CombatAction::create(
@@ -128,12 +143,12 @@ abstract class DD_Encounters
         } else {
             foreach ($found as $combatAction) {
                 foreach ($combatAction->getAffectedCreatures() as $affectedCreature) {
-                    $creatures[$affectedCreature]['current_hp'] = $creatures[$affectedCreature]['current_hp'] - $combatAction->getDamage();
+                    $creatureCounts[$affectedCreature]['current_hp'] = $creatureCounts[$affectedCreature]['current_hp'] - $combatAction->getDamage();
                     // if ($creatures[$affectedCreature]['current_hp'] > $creatures[$affectedCreature]['hp']) {
                     //     $creatures[$affectedCreature]['current_hp'] = $creatures[$affectedCreature]['hp'];
                     // }
-                    if ($creatures[$affectedCreature]['current_hp'] < 0) {
-                        $creatures[$affectedCreature]['current_hp'] = 0;
+                    if ($creatureCounts[$affectedCreature]['current_hp'] < 0) {
+                        $creatureCounts[$affectedCreature]['current_hp'] = 0;
                     }
                 }
             }
@@ -156,7 +171,7 @@ abstract class DD_Encounters
         $arguments       = BaseFunctions::sanitize($_GET, 'int');
         $currentCreature = ($arguments['creature'] ?? 1);
         $nextCreature    = $currentCreature + 1;
-        if ($nextCreature > count($creatures)) {
+        if ($nextCreature > count($creatureCounts)) {
             $nextCreature = 1;
         }
         $arguments['creature'] = $nextCreature;
@@ -171,7 +186,7 @@ abstract class DD_Encounters
                         <select name="actor">
                             <?php
                             $i = 1;
-                            foreach ($creatures as $id => $creature) {
+                            foreach ($creatureCounts as $id => $creature) {
                                 ?>
                                 <option value="<?= BaseFunctions::escape($id, 'attr') ?>" <?= selected($currentCreature, $i) ?>><?= BaseFunctions::escape($creature['name'], 'html') ?> (<?= BaseFunctions::escape($creature['current_hp'], 'html') ?>)</option>
                                 <?php
@@ -185,7 +200,7 @@ abstract class DD_Encounters
                     <label>
                         Target
                         <select name="affectedCreatures[]" multiple="multiple">
-                            <?php foreach ($creatures as $id => $creature): ?>
+                            <?php foreach ($creatureCounts as $id => $creature): ?>
                                 <option value="<?= BaseFunctions::escape($id, 'attr') ?>"><?= BaseFunctions::escape($creature['name'], 'html') ?> (<?= BaseFunctions::escape($creature['current_hp'], 'html') ?>)</option>
                             <?php endforeach; ?>
                         </select>
@@ -243,13 +258,15 @@ abstract class DD_Encounters
                 'save'   => 'mp_dd_encounters_save_creature',
                 'delete' => 'mp_dd_encounters_delete_creature',
             ],
-        ]);
+                                    ]
+        );
     }
 
     public static function enquirePlayerManagerScripts()
     {
         wp_enqueue_script('mp-dd-player-manager', self::URL . '/js/player-manager.js', ['jquery']);
-        wp_localize_script('mp-dd-player-manager', 'mp_ssv_player_manager_params', [
+        wp_localize_script(
+            'mp-dd-player-manager', 'mp_ssv_player_manager_params', [
             'urls'    => [
                 'plugins'  => plugins_url(),
                 'ajax'     => admin_url('admin-ajax.php'),
@@ -260,13 +277,15 @@ abstract class DD_Encounters
                 'save'   => 'mp_dd_encounters_save_player',
                 'delete' => 'mp_dd_encounters_delete_player',
             ],
-        ]);
+                                  ]
+        );
     }
 
     public static function enquireEncounterEditorScripts()
     {
         wp_enqueue_script('mp-dd-encounter-editor', self::URL . '/js/encounter-editor.js', ['jquery']);
-        wp_localize_script('mp-dd-encounter-editor', 'mp_ssv_encounter_editor_params', [
+        wp_localize_script(
+            'mp-dd-encounter-editor', 'mp_ssv_encounter_editor_params', [
             'urls'    => [
                 'plugins'  => plugins_url(),
                 'ajax'     => admin_url('admin-ajax.php'),
@@ -277,49 +296,62 @@ abstract class DD_Encounters
                 'save'   => 'mp_dd_encounters_add_creature',
                 'delete' => 'mp_dd_encounters_remove_creature',
             ],
-        ]);
+                                    ]
+        );
     }
 
-    private static function setupEncounter(array $creatureTerms): string
+    private static function setupCreatures(array $creatureCounts): string
     {
         global $post;
         if (BaseFunctions::isValidPOST(null)) {
-            CombatAction::create(
-                $post->ID,
-                BaseFunctions::sanitize($_POST['actor'], 'string'),
-                BaseFunctions::sanitize($_POST['affectedCreatures'], 'string'),
-                BaseFunctions::sanitize($_POST['action'], 'string'),
-                BaseFunctions::sanitize($_POST['damage'], 'int')
-            );
+            foreach (BaseFunctions::sanitize($_POST['name'], 'text') as $creatureId => $names) {
+                foreach ($names as $combatCreatureId => $name) {
+                    CombatCreature::create(
+                        $post->ID,
+                        $creatureId,
+                        $name,
+                        BaseFunctions::sanitize($_POST['hp'][$creatureId][$combatCreatureId], 'int'),
+                        BaseFunctions::sanitize($_POST['current_hp'][$creatureId][$combatCreatureId], 'int'),
+                        BaseFunctions::sanitize($_POST['initiative'][$creatureId][$combatCreatureId], 'int')
+                    );
+                }
+            }
         }
+
+        $creatures = Creature::findByIds(array_keys($creatureCounts));
         ob_start();
         ?>
         <form method="post">
+            <input type="hidden" name="action" value="createCreatures">
             <?php
-            foreach ($creatureTerms as $creatureTerm) {
-                ?>
-                <div class="row">
-                    <div class="col s3">
-                        <label for="creature">Creature</label>
-                        <input id="creature" type="text" disabled="disabled" value="<?= $creatureTerm->name ?>">
+            foreach ($creatureCounts as $creatureId => $creatureCount) {
+                $creature = $creatures[$creatureId];
+                for ($i = 1; $i <= $creatureCount; ++$i) {
+                    $generatedHp = $creature->getGeneratedHp();
+                    ?>
+                    <div class="row">
+                        <div class="col s3">
+                            <label for="creature">Creature</label>
+                            <input id="creature" type="text" name="name[<?= $creatureId ?>][<?= $i ?>]" value="<?= $creature->getName() ?>_<?= $i ?>">
+                        </div>
+                        <div class="col s3">
+                            <label for="initiative">Initiative</label>
+                            <input id="initiative" type="number" class="validate" min="<?= $creature->getMinInitiative() ?>" max="<?= $creature->getMaxInitiative() ?>" name="initiative[<?= $creatureId ?>][<?= $i ?>]" value="<?= $creature->getGeneratedInitiative() ?>">
+                        </div>
+                        <div class="col s3">
+                            <label for="hp">HP</label>
+                            <input id="hp" type="number" class="validate" min="<?= $creature->getMinHp() ?>" max="<?= $creature->getMaxHp() ?>" name="hp[<?= $creatureId ?>][<?= $i ?>]" value="<?= $generatedHp ?>">
+                        </div>
+                        <div class="col s3">
+                            <label for="current_hp">Current HP</label>
+                            <input id="current_hp" type="number" class="validate" min="0" name="current_hp[<?= $creatureId ?>][<?= $i ?>]" value="<?= $generatedHp ?>">
+                        </div>
                     </div>
-                    <div class="col s3">
-                        <label for="initiative">Initiative</label>
-                        <input id="initiative" type="number" class="validate" name="initiative[<?= $creatureTerm->slug ?>]">
-                    </div>
-                    <div class="col s3">
-                        <label for="hp">HP</label>
-                        <input id="hp" type="number" class="validate" name="hp[<?= $creatureTerm->slug ?>]">
-                    </div>
-                    <div class="col s3">
-                        <label for="current_hp">Current HP</label>
-                        <input id="current_hp" type="number" class="validate" name="current_hp[<?= $creatureTerm->slug ?>]">
-                    </div>
-                </div>
-                <?php
+                    <?php
+                }
             }
             ?>
-            <button type="submit" class="btn">Start</button>
+            <button type="submit" class="btn">Setup Players</button>
         </form>
         <?php
         return ob_get_clean();

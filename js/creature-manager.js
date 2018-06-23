@@ -8,7 +8,7 @@ let creatureManager = {
         let tr = document.createElement('tr');
         let properties = {
             name: '',
-            maxHp: '1D8',
+            hp: '1D8',
             url: '',
         };
 
@@ -28,24 +28,20 @@ let creatureManager = {
         generalFunctions.editor.isOpen = true;
         let tr = document.getElementById("model_" + id);
         let properties = jQuery.parseJSON(tr.dataset.properties);
-        console.log(properties);
         tr.setAttribute('class', 'inline-edit-row');
 
         let html =
             '<td colspan="5" class="colspanchange" id="editor">' +
-            '   <fieldset class="inline-edit-col" style="width: 30%;">' +
+            '   <fieldset class="inline-edit-col" style="width: 48%;">' +
             '      <legend class="inline-edit-legend" id="edit-type" data-edit-type="edit">Edit Player</legend>'
         ;
         html += generalFunctions.editor.getInputField('Name', 'name', properties.name, 'text', {'onkeydown': 'creatureManager.onKeyDown()'});
+        html += generalFunctions.editor.getDiceInputField('Max HP', 'hp', properties.hp, {'onkeydown': 'creatureManager.onKeyDown()'}, {'addition': true});
         html +=
             '   </fieldset>' +
-            '   <fieldset class="inline-edit-col" style="width: 30%; margin: 32px 2% 0;">'
+            '   <fieldset class="inline-edit-col" style="width: 48%; margin: 32px 2% 0;">'
         ;
-        html += generalFunctions.editor.getDiceInputField('Max HP', 'maxHp', properties.maxHp, {'onkeydown': 'creatureManager.onKeyDown()'}, {'addition': true});
-        html +=
-            '   </fieldset>' +
-            '   <fieldset class="inline-edit-col" style="width: 30%; margin: 32px 2% 0;">'
-        ;
+        html += generalFunctions.editor.getInputField('Initiative Modifier', 'initiativeModifier', properties.initiativeModifier, 'number', {'onkeydown': 'creatureManager.onKeyDown()'});
         html += generalFunctions.editor.getInputField('URL', 'url', properties.url, 'text', {'onkeydown': 'creatureManager.onKeyDown()'});
         html +=
             '   </fieldset>' +
@@ -97,7 +93,8 @@ let creatureManager = {
         let id = generalFunctions.editor.current;
         let properties = JSON.parse(tr.dataset.properties);
         properties.name = tr.querySelector('input[name="name"]').value;
-        properties.maxHp = tr.querySelector('input[name="maxHpC"]').value + 'D' + tr.querySelector('select[name="maxHpD"]').value + '+' + tr.querySelector('input[name="maxHpA"]').value;
+        properties.hp = tr.querySelector('input[name="hpC"]').value + 'D' + tr.querySelector('select[name="hpD"]').value + '+' + tr.querySelector('input[name="hpA"]').value;
+        properties.initiativeModifier = tr.querySelector('input[name="initiativeModifier"]').value;
         properties.url = tr.querySelector('input[name="url"]').value;
         tr.dataset.properties = JSON.stringify(properties);
         jQuery.post(
@@ -106,7 +103,8 @@ let creatureManager = {
                 action: params.actions.save,
                 id: id,
                 name: properties.name,
-                maxHp: properties.maxHp,
+                hp: properties.hp,
+                initiativeModifier: properties.initiativeModifier,
                 url: properties.url,
             },
             function (data) {
@@ -151,7 +149,8 @@ let creatureManager = {
             '       <span class="trash"><a href="javascript:void(0)" onclick="creatureManager.deleteRow(\'' + id + '\')" class="submitdelete">Trash</a></span>' +
             '   </div>' +
             '</td>' +
-            '<td>' + properties.maxHp + '</td>' +
+            '<td>' + properties.hp + '</td>' +
+            '<td>' + properties.initiativeModifier + '</td>' +
             '<td>' + properties.url + '</td>'
         ;
         tr.setAttribute('class', 'inactive');

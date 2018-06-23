@@ -12,9 +12,9 @@ if (!defined('ABSPATH')) {
 class Creature extends Model
 {
     #region Class
-    public static function create(string $name, string $maxHp, string $url): ?int
+    public static function create(string $name, string $hp, int $initiativeModifier = 0, string $url = ''): ?int
     {
-        return parent::_create(['c_name' => $name, 'c_maxHp' => $maxHp, 'c_url' => $url]);
+        return parent::_create(['c_name' => $name, 'c_hp' => $hp, 'c_initiativeModifier' => $initiativeModifier, 'c_url' => $url]);
     }
 
     /**
@@ -40,9 +40,26 @@ class Creature extends Model
         return parent::_findById($id);
     }
 
+    /**
+     * @param int[]  $ids
+     * @param string $orderBy
+     * @param string $order
+     *
+     * @return Creature[]
+     */
     public static function findByIds(array $ids, string $orderBy = 'id', string $order = 'ASC'): array
     {
         return parent::_findByIds($ids, $orderBy, $order);
+    }
+
+    public static function findByName(string $name): ?Model
+    {
+        $row = parent::_findRow('c_name = "' . $name . '"');
+        if ($row === null) {
+            return null;
+        } else {
+            return new Creature($row);
+        }
     }
 
     public static function deleteByIds(array $ids): bool
@@ -53,9 +70,10 @@ class Creature extends Model
     public static function getTableColumns(): array
     {
         return [
-            'c_name'  => 'Name',
-            'c_maxHp' => 'Max HP',
-            'c_url'   => 'URL',
+            'c_name'               => 'Name',
+            'c_hp'                 => 'Max HP',
+            'c_initiativeModifier' => 'Initiative Modifier',
+            'c_url'                => 'URL',
         ];
     }
 
@@ -66,7 +84,7 @@ class Creature extends Model
 
     protected static function _getDatabaseFields(): array
     {
-        return ['`c_name` VARCHAR(50)', '`c_maxHp` VARCHAR(7) NOT NULL', '`c_url` VARCHAR(255)'];
+        return ['`c_name` VARCHAR(50)', '`c_hp` VARCHAR(50) NOT NULL', '`c_initiativeModifier` int(11) NOT NULL DEFAULT 0', '`c_url` VARCHAR(255)'];
     }
 
     public static function getDatabaseCreateQuery(int $blogId = null): string
@@ -88,20 +106,69 @@ class Creature extends Model
         return $this;
     }
 
-    public function getMaxHp(): string
+    public function getHp(): string
     {
-        return $this->row['c_maxHp'];
+        return $this->row['c_hp'];
     }
 
-    public function setMaxHp(string $maxHp): self
+    public function getMinHp(): int
     {
-        $this->row['c_maxHp'] = $maxHp;
+        list($diceCount, $diceType, $modifier) = preg_split('/(D|\+)/', $this->getHp());
+        return ($diceCount + $modifier);
+    }
+
+    public function getMaxHp(): int
+    {
+        list($diceCount, $diceType, $modifier) = preg_split('/(D|\+)/', $this->getHp());
+        return (($diceCount * $diceType) + $modifier);
+    }
+
+    public function getGeneratedHp(): int
+    {
+        list($diceCount, $diceType, $modifier) = preg_split('/(D|\+)/', $this->getHp());
+        $generatedHp = 0;
+        for ($dice = 0; $dice < $diceCount; ++$dice) {
+            $generatedHp += random_int(0, $diceType);
+        }
+        $generatedHp += $modifier;
+        return $generatedHp;
+    }
+
+    public function setHp(string $hp): self
+    {
+        $this->row['c_hp'] = $hp;
+        return $this;
+    }
+
+    public function getInitiativeModifier(): int
+    {
+        return $this->row['c_initiativeModifier'] ?? 0;
+    }
+
+    public function getMinInitiative(): int
+    {
+        return 1 + $this->getInitiativeModifier();
+    }
+
+    public function getMaxInitiative(): int
+    {
+        return 20 + $this->getInitiativeModifier();
+    }
+
+    public function getGeneratedInitiative(): int
+    {
+        return random_int(1, 20) + $this->getInitiativeModifier();
+    }
+
+    public function setInitiativeModifier(int $initiativeModifier): self
+    {
+        $this->row['c_initiativeModifier'] = $initiativeModifier;
         return $this;
     }
 
     public function getUrl(): string
     {
-        return $this->row['c_url'];
+        return $this->row['c_url'] ?? '';
     }
 
     public function setUrl(string $url): self
@@ -113,18 +180,20 @@ class Creature extends Model
     public function getData(): array
     {
         return [
-            'name'  => $this->getName(),
-            'maxHp' => $this->getMaxHp(),
-            'url'   => $this->getUrl(),
+            'name'               => $this->getName(),
+            'hp'                 => $this->getHp(),
+            'initiativeModifier' => $this->getInitiativeModifier(),
+            'url'                => $this->getUrl(),
         ];
     }
 
     public function getTableRow(): array
     {
         return [
-            'c_name'  => $this->row['c_name'],
-            'c_maxHp' => $this->row['c_maxHp'],
-            'c_url'   => $this->row['c_url'],
+            'c_name'               => $this->getName(),
+            'c_hp'                 => $this->getHp(),
+            'c_initiativeModifier' => $this->getInitiativeModifier(),
+            'c_url'                => $this->getUrl(),
         ];
     }
 
