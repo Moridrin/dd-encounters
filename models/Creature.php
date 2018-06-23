@@ -128,7 +128,7 @@ class Creature extends Model
         list($diceCount, $diceType, $modifier) = preg_split('/(D|\+)/', $this->getHp());
         $generatedHp = 0;
         for ($dice = 0; $dice < $diceCount; ++$dice) {
-            $generatedHp += random_int(0, $diceType);
+            $generatedHp += random_int(1, $diceType);
         }
         $generatedHp += $modifier;
         return $generatedHp;

@@ -22,6 +22,7 @@ require_once 'general/general.php';
 require_once 'models/CombatAction.php';
 require_once 'models/Player.php';
 require_once 'models/Creature.php';
+require_once 'models/CombatCreature.php';
 require_once 'DD_Encounters.php';
 require_once 'Options.php';
 require_once 'ajax.php';

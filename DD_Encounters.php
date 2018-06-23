@@ -81,6 +81,10 @@ abstract class DD_Encounters
         if ($wpdb->last_error) {
             throw new \Exception($wpdb->last_error);
         }
+        $wpdb->query(CombatCreature::getDatabaseCreateQuery($blogId));
+        if ($wpdb->last_error) {
+            throw new \Exception($wpdb->last_error);
+        }
     }
 
     /**
@@ -98,6 +102,8 @@ abstract class DD_Encounters
         $wpdb->query("DROP TABLE $tableName;");
         $tableName = CombatAction::getDatabaseTableName($blogId);
         $wpdb->query("DROP TABLE $tableName;");
+        $tableName = CombatCreature::getDatabaseTableName($blogId);
+        $wpdb->query("DROP TABLE $tableName;");
     }
 
     /**
@@ -114,18 +120,21 @@ abstract class DD_Encounters
         }
 
 
-        $creatureCounts = get_post_meta($post->ID, 'creatures', true);
-        $combatActions  = CombatAction::findByEncounterId($post->ID);
-        if (empty($combatActions)) {
-            return self::setupCreatures($creatureCounts);
+        $creatureCounts  = get_post_meta($post->ID, 'creatures', true);
+        $combatCreatures = CombatCreature::findByEncounterId($post->ID);
+        if (empty($combatCreatures)) {
+            $result = self::setupCreatures($creatureCounts);
+            if ($result !== null) {
+                return $result;
+            }
         }
-        exit;
-
-
+        $combatActions = CombatAction::findByEncounterId($post->ID);
+        \mp_general\base\BaseFunctions::var_export($combatActions, true);
         uasort(
-            $creatureCounts, function ($creatureA, $creatureB) {
-            return $creatureB['initiative'] - $creatureA['initiative'];
-        }
+            $creatureCounts,
+            function ($creatureA, $creatureB) {
+                return $creatureB['initiative'] - $creatureA['initiative'];
+            }
         );
 
         if (!$setup && BaseFunctions::isValidPOST(null)) {
@@ -248,16 +257,16 @@ abstract class DD_Encounters
         wp_enqueue_script('mp-dd-creature-manager', self::URL . '/js/creature-manager.js', ['jquery']);
         wp_localize_script(
             'mp-dd-creature-manager', 'mp_ssv_creature_manager_params', [
-            'urls'    => [
-                'plugins'  => plugins_url(),
-                'ajax'     => admin_url('admin-ajax.php'),
-                'base'     => get_home_url(),
-                'basePath' => ABSPATH,
-            ],
-            'actions' => [
-                'save'   => 'mp_dd_encounters_save_creature',
-                'delete' => 'mp_dd_encounters_delete_creature',
-            ],
+                                        'urls'    => [
+                                            'plugins'  => plugins_url(),
+                                            'ajax'     => admin_url('admin-ajax.php'),
+                                            'base'     => get_home_url(),
+                                            'basePath' => ABSPATH,
+                                        ],
+                                        'actions' => [
+                                            'save'   => 'mp_dd_encounters_save_creature',
+                                            'delete' => 'mp_dd_encounters_delete_creature',
+                                        ],
                                     ]
         );
     }
@@ -267,16 +276,16 @@ abstract class DD_Encounters
         wp_enqueue_script('mp-dd-player-manager', self::URL . '/js/player-manager.js', ['jquery']);
         wp_localize_script(
             'mp-dd-player-manager', 'mp_ssv_player_manager_params', [
-            'urls'    => [
-                'plugins'  => plugins_url(),
-                'ajax'     => admin_url('admin-ajax.php'),
-                'base'     => get_home_url(),
-                'basePath' => ABSPATH,
-            ],
-            'actions' => [
-                'save'   => 'mp_dd_encounters_save_player',
-                'delete' => 'mp_dd_encounters_delete_player',
-            ],
+                                      'urls'    => [
+                                          'plugins'  => plugins_url(),
+                                          'ajax'     => admin_url('admin-ajax.php'),
+                                          'base'     => get_home_url(),
+                                          'basePath' => ABSPATH,
+                                      ],
+                                      'actions' => [
+                                          'save'   => 'mp_dd_encounters_save_player',
+                                          'delete' => 'mp_dd_encounters_delete_player',
+                                      ],
                                   ]
         );
     }
@@ -286,36 +295,36 @@ abstract class DD_Encounters
         wp_enqueue_script('mp-dd-encounter-editor', self::URL . '/js/encounter-editor.js', ['jquery']);
         wp_localize_script(
             'mp-dd-encounter-editor', 'mp_ssv_encounter_editor_params', [
-            'urls'    => [
-                'plugins'  => plugins_url(),
-                'ajax'     => admin_url('admin-ajax.php'),
-                'base'     => get_home_url(),
-                'basePath' => ABSPATH,
-            ],
-            'actions' => [
-                'save'   => 'mp_dd_encounters_add_creature',
-                'delete' => 'mp_dd_encounters_remove_creature',
-            ],
+                                        'urls'    => [
+                                            'plugins'  => plugins_url(),
+                                            'ajax'     => admin_url('admin-ajax.php'),
+                                            'base'     => get_home_url(),
+                                            'basePath' => ABSPATH,
+                                        ],
+                                        'actions' => [
+                                            'save'   => 'mp_dd_encounters_add_creature',
+                                            'delete' => 'mp_dd_encounters_remove_creature',
+                                        ],
                                     ]
         );
     }
 
-    private static function setupCreatures(array $creatureCounts): string
+    private static function setupCreatures(array $creatureCounts): ?string
     {
         global $post;
         if (BaseFunctions::isValidPOST(null)) {
-            foreach (BaseFunctions::sanitize($_POST['name'], 'text') as $creatureId => $names) {
-                foreach ($names as $combatCreatureId => $name) {
-                    CombatCreature::create(
-                        $post->ID,
-                        $creatureId,
-                        $name,
-                        BaseFunctions::sanitize($_POST['hp'][$creatureId][$combatCreatureId], 'int'),
-                        BaseFunctions::sanitize($_POST['current_hp'][$creatureId][$combatCreatureId], 'int'),
-                        BaseFunctions::sanitize($_POST['initiative'][$creatureId][$combatCreatureId], 'int')
-                    );
-                }
+            foreach (BaseFunctions::sanitize($_POST['name'], 'text') as $id => $name) {
+                list($creatureId, $combatCreatureId) = explode('_', $id);
+                CombatCreature::create(
+                    $post->ID,
+                    $creatureId,
+                    $name,
+                    BaseFunctions::sanitize($_POST['hp'][$id], 'int'),
+                    BaseFunctions::sanitize($_POST['current_hp'][$id], 'int'),
+                    BaseFunctions::sanitize($_POST['initiative'][$id], 'int')
+                );
             }
+            return null;
         }
 
         $creatures = Creature::findByIds(array_keys($creatureCounts));
@@ -332,19 +341,19 @@ abstract class DD_Encounters
                     <div class="row">
                         <div class="col s3">
                             <label for="creature">Creature</label>
-                            <input id="creature" type="text" name="name[<?= $creatureId ?>][<?= $i ?>]" value="<?= $creature->getName() ?>_<?= $i ?>">
+                            <input id="creature" type="text" name="name[<?= $creatureId ?>_<?= $i ?>]" value="<?= $creature->getName() ?>_<?= $i ?>">
                         </div>
                         <div class="col s3">
                             <label for="initiative">Initiative</label>
-                            <input id="initiative" type="number" class="validate" min="<?= $creature->getMinInitiative() ?>" max="<?= $creature->getMaxInitiative() ?>" name="initiative[<?= $creatureId ?>][<?= $i ?>]" value="<?= $creature->getGeneratedInitiative() ?>">
+                            <input id="initiative" type="number" class="validate" min="<?= $creature->getMinInitiative() ?>" max="<?= $creature->getMaxInitiative() ?>" name="initiative[<?= $creatureId ?>_<?= $i ?>]" value="<?= $creature->getGeneratedInitiative() ?>">
                         </div>
                         <div class="col s3">
                             <label for="hp">HP</label>
-                            <input id="hp" type="number" class="validate" min="<?= $creature->getMinHp() ?>" max="<?= $creature->getMaxHp() ?>" name="hp[<?= $creatureId ?>][<?= $i ?>]" value="<?= $generatedHp ?>">
+                            <input id="hp" type="number" class="validate" min="<?= $creature->getMinHp() ?>" max="<?= $creature->getMaxHp() ?>" name="hp[<?= $creatureId ?>_<?= $i ?>]" value="<?= $generatedHp ?>">
                         </div>
                         <div class="col s3">
                             <label for="current_hp">Current HP</label>
-                            <input id="current_hp" type="number" class="validate" min="0" name="current_hp[<?= $creatureId ?>][<?= $i ?>]" value="<?= $generatedHp ?>">
+                            <input id="current_hp" type="number" class="validate" min="0" name="current_hp[<?= $creatureId ?>_<?= $i ?>]" value="<?= $generatedHp ?>">
                         </div>
                     </div>
                     <?php
