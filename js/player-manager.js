@@ -36,20 +36,17 @@ let playerManager = {
 
         let html =
             '<td colspan="5" class="colspanchange" id="editor">' +
-            '   <fieldset class="inline-edit-col" style="width: 30%;">' +
+            '   <fieldset class="inline-edit-col" style="width: 48%;">' +
             '      <legend class="inline-edit-legend" id="edit-type" data-edit-type="edit">Edit Player</legend>'
         ;
         html += generalFunctions.editor.getInputField('Name', 'name', properties.name, 'text', {'onkeydown': 'playerManager.onKeyDown()'});
-        html +=
-            '   </fieldset>' +
-            '   <fieldset class="inline-edit-col" style="width: 30%; margin: 32px 2% 0;">'
-        ;
         html += generalFunctions.editor.getInputField('Level', 'level', properties.level, 'number', {'onkeydown': 'playerManager.onKeyDown()'});
         html +=
             '   </fieldset>' +
-            '   <fieldset class="inline-edit-col" style="width: 30%; margin: 32px 2% 0;">'
+            '   <fieldset class="inline-edit-col" style="width: 48%; margin: 32px 2% 0;">'
         ;
         html += generalFunctions.editor.getInputField('HP', 'hp', properties.hp, 'number', {'onkeydown': 'playerManager.onKeyDown()'});
+        html += generalFunctions.editor.getInputField('Post ID', 'postId', properties.postId, 'number', {'onkeydown': 'playerManager.onKeyDown()'});
         html +=
             '   </fieldset>' +
             '   <fieldset id="value_container" class="inline-edit-col" style="width: 30%; margin-top: 32px;">' +
@@ -91,6 +88,32 @@ let playerManager = {
         }
     },
 
+    clearCombat: function (id) {
+        let tr = document.getElementById('model_' + id);
+        let properties = JSON.parse(tr.dataset.properties);
+        jQuery.post(
+            params.urls.ajax,
+            {
+                action: params.actions.save,
+                id: id,
+                name: properties.name,
+                level: properties.level,
+                hp: properties.hp,
+                postId: properties.postId,
+                initiative: null,
+                currentHp: null,
+            },
+            function (data) {
+                if (generalFunctions.ajaxResponse(data)) {
+                    let id = JSON.parse(data)['id'];
+                    tr.setAttribute('id', 'model_' + id);
+                    generalFunctions.editor.current = id;
+                    playerManager.closeEditor();
+                }
+            }
+        );
+    },
+
     cancel: function () {
         this.closeEditor();
     },
@@ -102,6 +125,7 @@ let playerManager = {
         properties.name = tr.querySelector('input[name="name"]').value;
         properties.level = tr.querySelector('input[name="level"]').value;
         properties.hp = tr.querySelector('input[name="hp"]').value;
+        properties.postId = tr.querySelector('input[name="postId"]').value;
         tr.dataset.properties = JSON.stringify(properties);
         jQuery.post(
             params.urls.ajax,
@@ -111,6 +135,9 @@ let playerManager = {
                 name: properties.name,
                 level: properties.level,
                 hp: properties.hp,
+                postId: properties.postId,
+                initiative: properties.initiative,
+                currentHp: properties.currentHp,
             },
             function (data) {
                 if (generalFunctions.ajaxResponse(data)) {
@@ -151,11 +178,13 @@ let playerManager = {
             '   <strong>' + properties.name + '</strong>' +
             '   <div class="row-actions">' +
             '       <span class="inline"><a href="javascript:void(0)" onclick="playerManager.edit(\'' + id + '\')" class="editinline">Edit</a> | </span>' +
-            '       <span class="trash"><a href="javascript:void(0)" onclick="playerManager.deleteRow(\'' + id + '\')" class="submitdelete">Trash</a></span>' +
+            '       <span class="trash"><a href="javascript:void(0)" onclick="playerManager.deleteRow(\'' + id + '\')" class="submitdelete">Trash</a> | </span>' +
+            '       <span class=""><a href="javascript:void(0)" onclick="playerManager.clearCombat(\'' + id + '\')" class="sleep">Clear Combat</a></span>' +
             '   </div>' +
             '</td>' +
             '<td>' + properties.level + '</td>' +
-            '<td>' + properties.hp + '</td>'
+            '<td>' + properties.hp + '</td>' +
+            '<td>' + properties.postId + '</td>'
         ;
         tr.setAttribute('class', 'inactive');
         generalFunctions.editor.current = null;

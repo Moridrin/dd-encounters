@@ -3,15 +3,15 @@ let params = mp_ssv_encounter_editor_params;
 
 let encounterEditor = {
     show: function () {
-        $('#creatureAddForm').toggle();
-        $('#new_encounter_creature').focus();
+        $('#monsterAddForm').toggle();
+        $('#new_encounter_monster').focus();
     }
 };
 
 jQuery(document).ready(function ($) {
     // setTimeout(
     //     function () {
-    //         $('#new-tag-encounter_creatures').autocomplete({
+    //         $('#new-tag-encounter_monsters').autocomplete({
     //             delay: 10,
     //             cache: true,
     //             minChars: 2,

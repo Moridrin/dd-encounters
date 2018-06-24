@@ -9,12 +9,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class Player extends Model
+class Player extends Model implements Creature
 {
     #region Class
-    public static function create(string $name, int $level, int $hp, int $postId, int $initiative): ?int
+    public static function create(string $name, int $level, int $hp, ?int $postId, ?int $initiative, ?int $currentHp): ?int
     {
-        return parent::_create(['p_name' => $name, 'p_level' => $level, 'p_hp' => $hp, 'p_postId' => $postId, 'p_initiative' => $initiative]);
+        return parent::_create(['p_name' => $name, 'p_level' => $level, 'p_hp' => $hp, 'p_postId' => $postId, 'p_initiative' => $initiative, 'p_currentHp' => $currentHp]);
     }
 
     /**
@@ -40,9 +40,17 @@ class Player extends Model
         return parent::_findById($id);
     }
 
-    public static function findByIds(array $ids, string $orderBy = 'id', string $order = 'ASC'): array
+    /**
+     * @param array  $ids
+     * @param string $orderBy
+     * @param string $order
+     * @param string $key
+     *
+     * @return Player[]
+     */
+    public static function findByIds(array $ids, string $orderBy = 'id', string $order = 'ASC', string $key = 'id'): array
     {
-        return parent::_findByIds($ids, $orderBy, $order);
+        return parent::_findByIds($ids, $orderBy, $order, $key);
     }
 
     public static function deleteByIds(array $ids): bool
@@ -67,7 +75,7 @@ class Player extends Model
 
     protected static function _getDatabaseFields(): array
     {
-        return ['`p_name` VARCHAR(50)', '`p_level` INT NOT NULL', '`p_hp` INT NOT NULL', '`p_postId` INT NULL', '`p_initiative` INT NOT NULL'];
+        return ['`p_name` VARCHAR(50)', '`p_level` INT NOT NULL', '`p_hp` INT NOT NULL', '`p_postId` INT NULL', '`p_initiative` INT NULL', '`p_currentHp` INT NULL'];
     }
 
     public static function getDatabaseCreateQuery(int $blogId = null): string
@@ -111,25 +119,36 @@ class Player extends Model
         return $this;
     }
 
-    public function getPostId(): int
+    public function getPostId(): ?int
     {
         return $this->row['p_postId'];
     }
 
-    public function setPostId(int $postId): self
+    public function setPostId(?int $postId): self
     {
         $this->row['p_postId'] = $postId;
         return $this;
     }
 
-    public function getInitiative(): int
+    public function getInitiative(): ?int
     {
         return $this->row['p_initiative'];
     }
 
-    public function setInitiative(int $initiative): self
+    public function setInitiative(?int $initiative): self
     {
         $this->row['p_initiative'] = $initiative;
+        return $this;
+    }
+
+    public function getCurrentHp(): ?int
+    {
+        return $this->row['p_currentHp'];
+    }
+
+    public function setCurrentHp(?int $currentHp): self
+    {
+        $this->row['p_currentHp'] = $currentHp;
         return $this;
     }
 
@@ -141,6 +160,7 @@ class Player extends Model
             'hp'         => $this->getHp(),
             'postId'     => $this->getPostId(),
             'initiative' => $this->getInitiative(),
+            'currentHp'  => $this->getInitiative(),
         ];
     }
 
@@ -168,6 +188,12 @@ class Player extends Model
                 'onclick'   => 'playerManager.deleteRow(\'' . $this->getId() . '\')',
                 'linkClass' => 'submitdelete',
                 'linkText'  => 'Trash',
+            ],
+            [
+                'spanClass' => '',
+                'onclick'   => 'playerManager.clearCombat(\'' . $this->getId() . '\')',
+                'linkClass' => 'sleep',
+                'linkText'  => 'Clear Combat',
             ],
         ];
     }

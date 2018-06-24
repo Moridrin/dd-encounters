@@ -2,7 +2,7 @@
 
 namespace dd_encounters;
 
-use dd_encounters\models\Creature;
+use dd_encounters\models\Monster;
 use dd_encounters\models\Player;
 use mp_general\base\BaseFunctions;
 use mp_general\base\SSV_Global;
@@ -20,8 +20,8 @@ abstract class Options
 
     public static function setupSiteSpecificMenu()
     {
-        // add_menu_page('Creatures', 'Creatures', 'edit_creatures', 'dd_creatures', '', 'dashicons-feedback');
-        add_submenu_page('edit.php?post_type=encounter', 'Creatures', 'Creatures', 'edit_creatures', 'dd_creatures', [self::class, 'showCreaturesList']);
+        // add_menu_page('Monsters', 'Monsters', 'edit_monsters', 'dd_monsters', '', 'dashicons-feedback');
+        add_submenu_page('edit.php?post_type=encounter', 'Monsters', 'Monsters', 'edit_monsters', 'dd_monsters', [self::class, 'showMonstersList']);
         add_submenu_page('edit.php?post_type=encounter', 'Players', 'Players', 'edit_players', 'dd_players', [self::class, 'showPlayersList']);
     }
 
@@ -42,12 +42,12 @@ abstract class Options
             $addNew  = '<a href="javascript:void(0)" class="page-title-action" onclick="playerManager.addNew(\'the-list\', \'\')">Add New</a>';
             ?>
             <h1 class="wp-heading-inline"><span>Players</span><?= current_user_can('manage_shared_base_fields') ? $addNew : '' ?></h1>
-            <?php mp_ssv_show_table(Player::class, $orderBy, $order, current_user_can('edit_creatures')); ?>
+            <?php mp_ssv_show_table(Player::class, $orderBy, $order, current_user_can('edit_monsters')); ?>
         </div>
         <?php
     }
 
-    public static function showCreaturesList()
+    public static function showMonstersList()
     {
         ?>
         <div class="wrap">
@@ -57,11 +57,11 @@ abstract class Options
                     SSV_Global::addError('No action provided.');
                 } else {
                     $action      = BaseFunctions::sanitize($_POST['action'], 'text');
-                    $postHandled = apply_filters('dd_encounters_creatures_list_post', $action);
-                    if (!$postHandled) {
+                    $postHandled = apply_filters('dd_encounters_monsters_list_post', $action);
+                    if ($postHandled !== true) {
                         switch (BaseFunctions::sanitize($_POST['action'], 'text')) {
                             case 'delete-selected':
-                                Creature::deleteByIds(BaseFunctions::sanitize($_POST['ids'], 'int'));
+                                Monster::deleteByIds(BaseFunctions::sanitize($_POST['ids'], 'int'));
                                 break;
                             case 'import':
                                 $data            = array_map('str_getcsv', file($_FILES['import']['tmp_name']));
@@ -77,7 +77,7 @@ abstract class Options
                                     $hp                 = BaseFunctions::sanitize($row['hp'], 'text');
                                     $initiativeModifier = BaseFunctions::sanitize($row['init'] ?? $row['$initiativeModifier'] ?? 0, 'int');
                                     $url                = isset($row['url']) ? BaseFunctions::sanitize($row['url'], 'text') : '';
-                                    if (Creature::findByName($name) !== null) {
+                                    if (Monster::findByName($name) !== null) {
                                         SSV_Global::addError('"' . $name . '" already exists.');
                                         continue;
                                     }
@@ -85,7 +85,7 @@ abstract class Options
                                     if (strpos($hp, '+') === false) {
                                         $hp .= '+0';
                                     }
-                                    Creature::create($name, $hp, $initiativeModifier, $url);
+                                    Monster::create($name, $hp, $initiativeModifier, $url);
                                 }
                                 if ($notAddedRecords > 0) {
                                     SSV_Global::addError($notAddedRecords . ' rows could not be added because they don\'t have a name/hp field.');
@@ -100,10 +100,10 @@ abstract class Options
             }
             $orderBy = BaseFunctions::sanitize(isset($_GET['orderby']) ? $_GET['orderby'] : 'f_name', 'text');
             $order   = BaseFunctions::sanitize(isset($_GET['order']) ? $_GET['order'] : 'asc', 'text');
-            $addNew  = '<a href="javascript:void(0)" class="page-title-action" onclick="creatureManager.addNew(\'the-list\', \'\')">Add New</a>';
+            $addNew  = '<a href="javascript:void(0)" class="page-title-action" onclick="monsterManager.addNew(\'the-list\', \'\')">Add New</a>';
             ?>
-            <h1 class="wp-heading-inline"><span>Creatures</span><?= current_user_can('manage_shared_base_fields') ? $addNew : '' ?></h1>
-            <?php mp_ssv_show_table(Creature::class, $orderBy, $order, current_user_can('edit_players')); ?>
+            <h1 class="wp-heading-inline"><span>Monsters</span><?= current_user_can('manage_shared_base_fields') ? $addNew : '' ?></h1>
+            <?php mp_ssv_show_table(Monster::class, $orderBy, $order, current_user_can('edit_players')); ?>
             <h1>Import</h1>
             <h2>From CSV</h2>
             <form method="post" enctype="multipart/form-data">
@@ -111,7 +111,7 @@ abstract class Options
                 <input type="file" name="import">
                 <button type="submit">Import</button>
             </form>
-            <?php do_action('dd_encounters_creatures_list') ?>
+            <?php do_action('dd_encounters_monsters_list') ?>
         </div>
         <?php
     }

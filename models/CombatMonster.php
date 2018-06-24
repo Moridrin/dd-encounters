@@ -10,12 +10,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class CombatCreature extends Model
+class CombatMonster extends Model implements Creature
 {
     #region Class
-    public static function create(int $encounterId, int $creatureId, string $name, int $maxHp, int $currentHp, int $initiative): ?int
+    public static function create(int $encounterId, int $monsterId, string $name, int $maxHp, int $currentHp, int $initiative): ?int
     {
-        return parent::_create(['cc_encounterId' => $encounterId, 'cc_creatureId' => $creatureId, 'cc_name' => $name, 'cc_maxHp' => $maxHp, 'cc_currentHp' => $currentHp, 'cc_initiative' => $initiative]);
+        return parent::_create(['cm_encounterId' => $encounterId, 'cm_monsterId' => $monsterId, 'cm_name' => $name, 'cm_maxHp' => $maxHp, 'cm_currentHp' => $currentHp, 'cm_initiative' => $initiative]);
     }
 
     /**
@@ -23,7 +23,7 @@ class CombatCreature extends Model
      * @param string $order
      * @param string $key
      *
-     * @return CombatCreature[]
+     * @return CombatMonster[]
      */
     public static function getAll(string $orderBy = 'id', string $order = 'ASC', string $key = 'id'): array
     {
@@ -33,7 +33,7 @@ class CombatCreature extends Model
     /**
      * @param int $id
      *
-     * @return CombatCreature
+     * @return CombatMonster
      * @throws NotFoundException
      */
     public static function findById(int $id): Model
@@ -51,11 +51,11 @@ class CombatCreature extends Model
      * @param string $orderBy
      * @param string $order
      *
-     * @return CombatAction[]
+     * @return CombatMonster[]
      */
     public static function findByEncounterId(int $encounterId, string $orderBy = 'id', string $order = 'ASC'): array
     {
-        return parent::_find('cc_encounterId = ' . $encounterId, $orderBy, $order);
+        return parent::_find('cm_encounterId = ' . $encounterId, $orderBy, $order);
     }
 
     public static function deleteByIds(array $ids): bool
@@ -66,27 +66,27 @@ class CombatCreature extends Model
     public static function getTableColumns(): array
     {
         return [
-            'cc_name'       => 'Name',
-            'cc_maxHp'      => 'MaxHp',
-            'cc_currentHp'  => 'CurrentHp',
-            'cc_initiative' => 'Initiative',
+            'cm_name'       => 'Name',
+            'cm_maxHp'      => 'MaxHp',
+            'cm_currentHp'  => 'CurrentHp',
+            'cm_initiative' => 'Initiative',
         ];
     }
 
     public static function getDatabaseTableName(int $blogId = null): string
     {
-        return Database::getPrefixForBlog($blogId) . 'combat_creature';
+        return Database::getPrefixForBlog($blogId) . 'combat_monster';
     }
 
     protected static function _getDatabaseFields(): array
     {
         return [
-            '`cc_encounterId` BIGINT(20) NOT NULL',
-            '`cc_creatureId` BIGINT(20) NOT NULL',
-            '`cc_name` VARCHAR(50) NOT NULL',
-            '`cc_maxHp` int NOT NULL',
-            '`cc_currentHp` int NOT NULL',
-            '`cc_initiative` int NOT NULL',
+            '`cm_encounterId` BIGINT(20) NOT NULL',
+            '`cm_monsterId` BIGINT(20) NOT NULL',
+            '`cm_name` VARCHAR(50) NOT NULL',
+            '`cm_maxHp` int NOT NULL',
+            '`cm_currentHp` int NOT NULL',
+            '`cm_initiative` int NOT NULL',
         ];
     }
 
@@ -100,67 +100,67 @@ class CombatCreature extends Model
     #region Getters & Setters
     public function getEncounterId(): int
     {
-        return $this->row['cc_encounterId'];
+        return $this->row['cm_encounterId'];
     }
 
     public function setEncounterId(int $encounterId): self
     {
-        $this->row['cc_encounterId'] = $encounterId;
+        $this->row['cm_encounterId'] = $encounterId;
         return $this;
     }
 
-    public function getCreatureId(): int
+    public function getMonsterId(): int
     {
-        return $this->row['cc_creatureId'];
+        return $this->row['cm_monsterId'];
     }
 
-    public function setCreatureId(int $creatureId): self
+    public function setMonsterId(int $monsterId): self
     {
-        $this->row['cc_creatureId'] = $creatureId;
+        $this->row['cm_monsterId'] = $monsterId;
         return $this;
     }
 
     public function getName(): string
     {
-        return $this->row['cc_name'];
+        return $this->row['cm_name'];
     }
 
     public function setName(string $name): self
     {
-        $this->row['cc_name'] = $name;
+        $this->row['cm_name'] = $name;
         return $this;
     }
 
     public function getMaxHp(): int
     {
-        return $this->row['cc_maxHp'];
+        return $this->row['cm_maxHp'];
     }
 
     public function setMaxHp(int $maxHp): self
     {
-        $this->row['cc_maxHp'] = $maxHp;
+        $this->row['cm_maxHp'] = $maxHp;
         return $this;
     }
 
     public function getCurrentHp(): int
     {
-        return $this->row['cc_currentHp'];
+        return $this->row['cm_currentHp'];
     }
 
     public function setCurrentHp(int $currentHp): self
     {
-        $this->row['cc_currentHp'] = $currentHp;
+        $this->row['cm_currentHp'] = $currentHp;
         return $this;
     }
 
     public function getInitiative(): int
     {
-        return $this->row['cc_initiative'];
+        return $this->row['cm_initiative'];
     }
 
     public function setInitiative(int $initiative): self
     {
-        $this->row['cc_initiative'] = $initiative;
+        $this->row['cm_initiative'] = $initiative;
         return $this;
     }
 
@@ -170,7 +170,7 @@ class CombatCreature extends Model
     {
         return [
             'encounterId' => $this->getEncounterId(),
-            'creatureId'  => $this->getCreatureId(),
+            'monsterId'   => $this->getMonsterId(),
             'name'        => $this->getName(),
             'maxHp'       => $this->getMaxHp(),
             'currentHp'   => $this->getCurrentHp(),
@@ -181,12 +181,12 @@ class CombatCreature extends Model
     public function getTableRow(): array
     {
         return [
-            'cc_encounterId' => $this->getEncounterId(),
-            'cc_creatureId'  => $this->getCreatureId(),
-            'cc_name'        => $this->getName(),
-            'cc_maxHp'       => $this->getMaxHp(),
-            'cc_currentHp'   => $this->getCurrentHp(),
-            'cc_initiative'  => $this->getInitiative(),
+            'cm_encounterId' => $this->getEncounterId(),
+            'cm_monsterId'   => $this->getMonsterId(),
+            'cm_name'        => $this->getName(),
+            'cm_maxHp'       => $this->getMaxHp(),
+            'cm_currentHp'   => $this->getCurrentHp(),
+            'cm_initiative'  => $this->getInitiative(),
         ];
     }
 

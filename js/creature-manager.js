@@ -1,7 +1,7 @@
 // noinspection JSUnresolvedVariable
-let params = mp_ssv_creature_manager_params;
+let params = mp_ssv_monster_manager_params;
 
-let creatureManager = {
+let monsterManager = {
 
     addNew: function (containerId) {
         let container = document.getElementById(containerId);
@@ -35,21 +35,21 @@ let creatureManager = {
             '   <fieldset class="inline-edit-col" style="width: 48%;">' +
             '      <legend class="inline-edit-legend" id="edit-type" data-edit-type="edit">Edit Player</legend>'
         ;
-        html += generalFunctions.editor.getInputField('Name', 'name', properties.name, 'text', {'onkeydown': 'creatureManager.onKeyDown()'});
-        html += generalFunctions.editor.getDiceInputField('Max HP', 'hp', properties.hp, {'onkeydown': 'creatureManager.onKeyDown()'}, {'addition': true});
+        html += generalFunctions.editor.getInputField('Name', 'name', properties.name, 'text', {'onkeydown': 'monsterManager.onKeyDown()'});
+        html += generalFunctions.editor.getDiceInputField('Max HP', 'hp', properties.hp, {'onkeydown': 'monsterManager.onKeyDown()'}, {'addition': true});
         html +=
             '   </fieldset>' +
             '   <fieldset class="inline-edit-col" style="width: 48%; margin: 32px 2% 0;">'
         ;
-        html += generalFunctions.editor.getInputField('Initiative Modifier', 'initiativeModifier', properties.initiativeModifier, 'number', {'onkeydown': 'creatureManager.onKeyDown()'});
-        html += generalFunctions.editor.getInputField('URL', 'url', properties.url, 'text', {'onkeydown': 'creatureManager.onKeyDown()'});
+        html += generalFunctions.editor.getInputField('Initiative Modifier', 'initiativeModifier', properties.initiativeModifier, 'number', {'onkeydown': 'monsterManager.onKeyDown()'});
+        html += generalFunctions.editor.getInputField('URL', 'url', properties.url, 'text', {'onkeydown': 'monsterManager.onKeyDown()'});
         html +=
             '   </fieldset>' +
             '   <fieldset id="value_container" class="inline-edit-col" style="width: 30%; margin-top: 32px;">' +
             '   </fieldset>' +
             '   <div class="submit inline-edit-save">' +
-            '       <button type="button" class="button cancel alignleft" onclick="creatureManager.cancel()">Cancel</button>' +
-            '       <button type="button" class="button button-primary save alignright" onclick="creatureManager.saveEdit()">Save</button>' +
+            '       <button type="button" class="button cancel alignleft" onclick="monsterManager.cancel()">Cancel</button>' +
+            '       <button type="button" class="button button-primary save alignright" onclick="monsterManager.saveEdit()">Save</button>' +
             '       <br class="clear">' +
             '   </div>' +
             '</td>'
@@ -112,7 +112,7 @@ let creatureManager = {
                     let id = JSON.parse(data)['id'];
                     tr.setAttribute('id', 'model_' + id);
                     generalFunctions.editor.current = id;
-                    creatureManager.closeEditor();
+                    monsterManager.closeEditor();
                 }
             }
         );
@@ -145,8 +145,8 @@ let creatureManager = {
             '<td>' +
             '   <strong>' + properties.name + '</strong>' +
             '   <div class="row-actions">' +
-            '       <span class="inline"><a href="javascript:void(0)" onclick="creatureManager.edit(\'' + id + '\')" class="editinline">Edit</a> | </span>' +
-            '       <span class="trash"><a href="javascript:void(0)" onclick="creatureManager.deleteRow(\'' + id + '\')" class="submitdelete">Trash</a></span>' +
+            '       <span class="inline"><a href="javascript:void(0)" onclick="monsterManager.edit(\'' + id + '\')" class="editinline">Edit</a> | </span>' +
+            '       <span class="trash"><a href="javascript:void(0)" onclick="monsterManager.deleteRow(\'' + id + '\')" class="submitdelete">Trash</a></span>' +
             '   </div>' +
             '</td>' +
             '<td>' + properties.hp + '</td>' +

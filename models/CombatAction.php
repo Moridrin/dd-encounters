@@ -12,9 +12,9 @@ if (!defined('ABSPATH')) {
 class CombatAction extends Model
 {
     #region Class
-    public static function create(int $encounterId, string $actor, array $affectedCreatures, ?string $action, int $damage): ?int
+    public static function create(int $encounterId, string $actor, array $affectedMonsters, ?string $action, int $damage): ?int
     {
-        return parent::_create(['ca_encounterId' => $encounterId, 'ca_actor' => $actor, 'ca_affectedCreatures' => json_encode($affectedCreatures), 'ca_action' => $action, 'ca_damage' => $damage]);
+        return parent::_create(['ca_encounterId' => $encounterId, 'ca_actor' => $actor, 'ca_affectedMonsters' => json_encode($affectedMonsters), 'ca_action' => $action, 'ca_damage' => $damage]);
     }
 
     /**
@@ -59,15 +59,15 @@ class CombatAction extends Model
 
     /**
      * @param int    $encounterId
-     * @param string $affectedCreature
+     * @param string $affectedMonster
      * @param string $orderBy
      * @param string $order
      *
      * @return CombatAction[]
      */
-    public static function findByEncounterIdAndAffectedCreature(int $encounterId, string $affectedCreature, string $orderBy = 'id', string $order = 'ASC'): array
+    public static function findByEncounterIdAndAffectedMonster(int $encounterId, string $affectedMonster, string $orderBy = 'id', string $order = 'ASC'): array
     {
-        return parent::_find('ca_encounterId = ' . $encounterId . ' AND JSON_SEARCH(ca_affectedCreatures, "all", "' . $affectedCreature . '") IS NOT NULL', $orderBy, $order);
+        return parent::_find('ca_encounterId = ' . $encounterId . ' AND JSON_SEARCH(ca_affectedMonsters, "all", "' . $affectedMonster . '") IS NOT NULL', $orderBy, $order);
     }
 
     public static function deleteByIds(array $ids): bool
@@ -78,10 +78,10 @@ class CombatAction extends Model
     public static function getTableColumns(): array
     {
         return [
-            'ca_actor'             => 'Actor',
-            'ca_affectedCreatures' => 'Affected Creatures',
-            'ca_action'            => 'Action',
-            'ca_damage'            => 'Damage',
+            'ca_actor'            => 'Actor',
+            'ca_affectedMonsters' => 'Affected Monsters',
+            'ca_action'           => 'Action',
+            'ca_damage'           => 'Damage',
         ];
     }
 
@@ -92,7 +92,7 @@ class CombatAction extends Model
 
     protected static function _getDatabaseFields(): array
     {
-        return ['`ca_encounterId` INT NOT NULL', '`ca_actor` VARCHAR(50) NOT NULL', '`ca_affectedCreatures` TEXT NOT NULL', '`ca_action` VARCHAR(255)', '`ca_damage` INT NOT NULL'];
+        return ['`ca_encounterId` INT NOT NULL', '`ca_actor` VARCHAR(50) NOT NULL', '`ca_affectedMonsters` TEXT NOT NULL', '`ca_action` VARCHAR(255)', '`ca_damage` INT NOT NULL'];
     }
 
     public static function getDatabaseCreateQuery(int $blogId = null): string
@@ -104,7 +104,7 @@ class CombatAction extends Model
     #region Instance
     public function __init(): void
     {
-        $this->row['ca_affectedCreatures'] = json_decode($this->row['ca_affectedCreatures'], true);
+        $this->row['ca_affectedMonsters'] = json_decode($this->row['ca_affectedMonsters'], true);
     }
 
     public function getActor(): string
@@ -117,14 +117,14 @@ class CombatAction extends Model
         $this->row['ca_actor'] = $actor;
     }
 
-    public function getAffectedCreatures(): array
+    public function getAffectedMonsters(): array
     {
-        return $this->row['ca_affectedCreatures'];
+        return $this->row['ca_affectedMonsters'];
     }
 
-    public function setAffectedCreatures(array $affectedCreatures)
+    public function setAffectedMonsters(array $affectedMonsters)
     {
-        $this->row['ca_affectedCreatures'] = $affectedCreatures;
+        $this->row['ca_affectedMonsters'] = $affectedMonsters;
     }
 
     public function getAction(): string
@@ -151,18 +151,18 @@ class CombatAction extends Model
     public function getData(): array
     {
         return [
-            'actor'             => $this->getActor(),
-            'affectedCreatures' => $this->getAffectedCreatures(),
-            'damage'            => $this->getDamage(),
+            'actor'            => $this->getActor(),
+            'affectedMonsters' => $this->getAffectedMonsters(),
+            'damage'           => $this->getDamage(),
         ];
     }
 
     public function getTableRow(): array
     {
         return [
-            'ca_actor'             => $this->getActor(),
-            'ca_affectedCreatures' => $this->getAffectedCreatures(),
-            'ca_damage'            => $this->getDamage(),
+            'ca_actor'            => $this->getActor(),
+            'ca_affectedMonsters' => $this->getAffectedMonsters(),
+            'ca_damage'           => $this->getDamage(),
         ];
     }
 

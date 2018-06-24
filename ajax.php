@@ -1,6 +1,6 @@
 <?php
 
-use dd_encounters\models\Creature;
+use dd_encounters\models\Monster;
 use dd_encounters\models\Player;
 use mp_general\base\BaseFunctions;
 use mp_general\base\SSV_Global;
@@ -12,12 +12,15 @@ if (!defined('ABSPATH')) {
 
 function mp_dd_encounters_save_player()
 {
-    $id    = BaseFunctions::sanitize($_POST['id'], 'int');
-    $name  = BaseFunctions::sanitize($_POST['name'], 'text');
-    $level = BaseFunctions::sanitize($_POST['level'], 'int');
-    $hp    = BaseFunctions::sanitize($_POST['hp'], 'int');
+    $id         = BaseFunctions::sanitize($_POST['id'], 'int');
+    $name       = BaseFunctions::sanitize($_POST['name'], 'text');
+    $level      = BaseFunctions::sanitize($_POST['level'], 'int');
+    $hp         = BaseFunctions::sanitize($_POST['hp'], 'int');
+    $postId     = BaseFunctions::sanitize($_POST['postId'] ?? null, 'int');
+    $initiative = BaseFunctions::sanitize($_POST['initiative'] ?? null, 'int');
+    $currentHp  = BaseFunctions::sanitize($_POST['currentHp'] ?? null, 'int');
     if ($id === null) {
-        $id = Player::create($name, $level, $hp, 0);
+        $id = Player::create($name, $level, $hp, $postId, $initiative, $currentHp);
         if ($id === null) {
             wp_die();
         }
@@ -28,6 +31,9 @@ function mp_dd_encounters_save_player()
             ->setName($name)
             ->setLevel($level)
             ->setHp($hp)
+            ->setPostId($postId)
+            ->setInitiative($initiative)
+            ->setCurrentHp($currentHp)
             ->save()
         ;
     } catch (NotFoundException $e) {
@@ -48,7 +54,7 @@ function mp_dd_encounters_delete_player()
 
 add_action('wp_ajax_mp_dd_encounters_delete_player', 'mp_dd_encounters_delete_player');
 
-function mp_dd_encounters_save_creature()
+function mp_dd_encounters_save_monster()
 {
     $id                 = BaseFunctions::sanitize($_POST['id'], 'int');
     $name               = BaseFunctions::sanitize($_POST['name'], 'text');
@@ -56,14 +62,14 @@ function mp_dd_encounters_save_creature()
     $initiativeModifier = BaseFunctions::sanitize($_POST['initiativeModifier'], 'int');
     $url                = BaseFunctions::sanitize($_POST['url'], 'text');
     if ($id === null) {
-        $id = Creature::create($name, $hp, $initiativeModifier, $url);
+        $id = Monster::create($name, $hp, $initiativeModifier, $url);
         if ($id === null) {
             wp_die();
         }
     } else {
         try {
-            $creature = Creature::findById($id);
-            $creature
+            $monster = Monster::findById($id);
+            $monster
                 ->setName($name)
                 ->setHp($hp)
                 ->setInitiativeModifier($initiativeModifier)
@@ -71,20 +77,20 @@ function mp_dd_encounters_save_creature()
                 ->save()
             ;
         } catch (NotFoundException $e) {
-            SSV_Global::addError('Creature with ID "' . $id . '" not found.');
+            SSV_Global::addError('Monster with ID "' . $id . '" not found.');
             wp_die();
         }
         wp_die(json_encode(['success' => true, 'id' => $id]));
     }
 }
 
-add_action('wp_ajax_mp_dd_encounters_save_creature', 'mp_dd_encounters_save_creature', 10, 0);
+add_action('wp_ajax_mp_dd_encounters_save_monster', 'mp_dd_encounters_save_monster', 10, 0);
 
-function mp_dd_encounters_delete_creature()
+function mp_dd_encounters_delete_monster()
 {
     $id = BaseFunctions::sanitize($_POST['id'], 'int');
-    Creature::deleteByIds([$id]);
+    Monster::deleteByIds([$id]);
     wp_die(json_encode(['success' => true]));
 }
 
-add_action('wp_ajax_mp_dd_encounters_delete_creature', 'mp_dd_encounters_delete_creature');
+add_action('wp_ajax_mp_dd_encounters_delete_monster', 'mp_dd_encounters_delete_monster');

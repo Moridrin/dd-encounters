@@ -17,12 +17,13 @@ if (!defined('ABSPATH')) {
 define('DD_ENCOUNTERS_PATH', plugin_dir_path(__FILE__));
 define('DD_ENCOUNTERS_URL', plugins_url() . '/' . plugin_basename(__DIR__));
 
-require_once 'post-type/encounter.php';
+require_once 'post-type/Encounter.php';
 require_once 'general/general.php';
+require_once 'models/Creature.php';
 require_once 'models/CombatAction.php';
 require_once 'models/Player.php';
-require_once 'models/Creature.php';
-require_once 'models/CombatCreature.php';
+require_once 'models/Monster.php';
+require_once 'models/CombatMonster.php';
 require_once 'DD_Encounters.php';
 require_once 'Options.php';
 require_once 'ajax.php';
@@ -41,3 +42,4 @@ foreach ($monsters as $monster) {
 // \mp_general\base\BaseFunctions::var_export($tmp, true);
 // $monsters = json_decode($monsters);
 // \mp_general\base\BaseFunctions::var_export($monsters, true);
+// DD_Encounters::CLEAN_INSTALL();
