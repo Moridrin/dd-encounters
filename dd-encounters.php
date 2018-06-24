@@ -42,4 +42,4 @@ foreach ($monsters as $monster) {
 // \mp_general\base\BaseFunctions::var_export($tmp, true);
 // $monsters = json_decode($monsters);
 // \mp_general\base\BaseFunctions::var_export($monsters, true);
-// DD_Encounters::CLEAN_INSTALL();
+// \dd_encounters\DD_Encounters::CLEAN_INSTALL();

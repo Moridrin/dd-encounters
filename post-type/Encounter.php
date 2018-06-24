@@ -2,6 +2,7 @@
 
 namespace dd_encounters\PostType;
 
+use dd_encounters\models\CombatAction;
 use dd_encounters\models\CombatMonster;
 use dd_encounters\models\Creature;
 use dd_encounters\models\Monster;
@@ -55,55 +56,15 @@ abstract class Encounter
                 return $b->getInitiative() - $a->getInitiative();
             }
         );
-        $currentCreature = BaseFunctions::sanitize($_GET['activeCreature'] ?? 1, 'int');
-        $nextCreatureUrl = BaseFunctions::getCurrentUrlWithArguments(['activeCreature' => ($currentCreature + 1) % count($creatures)]);
-        ob_start();
-        ?>
-        <form method="post">
-            <div class="row">
-                <div class="input-field col s3">
-                    <select id="actor" name="actor">
-                        <?php
-                        $i = 1;
-                        foreach ($creatures as $id => $creature) {
-                            ?>
-                            <option value="<?= BaseFunctions::escape($id, 'attr') ?>" <?= selected($currentCreature, $i) ?>><?= BaseFunctions::escape($creature->getName(), 'html') ?> (<?= BaseFunctions::escape($creature->getCurrentHp(), 'html') ?>)</option>
-                            <?php
-                            ++$i;
-                        }
-                        ?>
-                    </select>
-                    <label for="actor">Actor</label>
-                </div>
-                <div class="input-field col s3">
-                    <select id="affectedCreatures" name="affectedCreatures[]" multiple>
-                        <?php foreach ($creatures as $id => $creature): ?>
-                            <option value="<?= BaseFunctions::escape($id, 'attr') ?>"><?= BaseFunctions::escape($creature->getName(), 'html') ?> (<?= BaseFunctions::escape($creature->getCurrentHp(), 'html') ?>)</option>
-                        <?php endforeach; ?>
-                    </select>
-                    <label for="affectedCreatures">Target</label>
-                </div>
-                <div class="input-field col s3">
-                    <input id="action" type="text" name="action">
-                    <label for="action">Action</label>
-                </div>
-                <div class="input-field col s3">
-                    <input id="damage" type="number" name="damage">
-                    <label for="damage">Damage</label>
-                </div>
-            </div>
-            <div class="row">
-                <a href="<?= $nextCreatureUrl ?>" class="btn">Next Monster</a>
-            </div>
-        </form>
-        <?php
-        return ob_get_clean() . $content;
+        $actionForm = self::actionForm($creatures);
+        $actionLog  = self::getActionLog($creatures);
+        return $actionForm . $actionLog . $content;
     }
 
     private static function setupEncounter(array $monsterCounts, array $players): ?string
     {
         global $post;
-        if (BaseFunctions::isValidPOST(null)) {
+        if (BaseFunctions::isValidPOST(null) && $_POST['action'] === 'createMonsters') {
             foreach ($players as $playerId => $player) {
                 $player
                     ->setInitiative(BaseFunctions::sanitize($_POST['p_initiative'][$playerId], 'int'))
@@ -187,6 +148,157 @@ abstract class Encounter
         </form>
         <?php
         return ob_get_clean();
+    }
+
+    /**
+     * @param Creature[] $creatures
+     *
+     * @return string
+     */
+    private static function actionForm(array $creatures): string
+    {
+        global $post;
+        if (BaseFunctions::isValidPOST(null) && $_POST['action'] === 'saveCombatAction') {
+            $actor             = BaseFunctions::sanitize($_POST['actor'], 'text');
+            $affectedCreatures = BaseFunctions::sanitize($_POST['affectedCreatures'], 'int');
+            $creatureAction    = BaseFunctions::sanitize($_POST['creatureAction'], 'text');
+            $damage            = BaseFunctions::sanitize($_POST['damage'], 'int');
+            $kills             = [];
+            foreach ($affectedCreatures as $affectedCreatureId) {
+                $affectedCreature = $creatures[$affectedCreatureId];
+                $died             = $affectedCreature->addDamage($damage);
+                $affectedCreature->save();
+                if ($died) {
+                    $kills[] = $affectedCreatureId;
+                }
+            }
+            CombatAction::create($post->ID, $actor, $affectedCreatures, $creatureAction, $damage, $kills);
+        }
+        $currentCreature = BaseFunctions::sanitize($_GET['activeCreature'] ?? 0, 'int');
+        $nextCreatureUrl = BaseFunctions::getCurrentUrlWithArguments(['activeCreature' => ($currentCreature + 1) % count($creatures)]);
+        ob_start();
+        ?>
+        <form method="post">
+            <input type="hidden" name="action" value="saveCombatAction">
+            <div class="row">
+                <div class="input-field col s3">
+                    <select id="actor" name="actor">
+                        <?php
+                        foreach ($creatures as $id => $creature) {
+                            ?>
+                            <option value="<?= BaseFunctions::escape($id, 'attr') ?>" <?= selected($currentCreature, $id) ?>><?= BaseFunctions::escape($creature->getName(), 'html') ?> (<?= BaseFunctions::escape($creature->getCurrentHp(), 'html') ?>)</option><?php
+                        }
+                        ?>
+                    </select>
+                    <label for="actor">Actor</label>
+                </div>
+                <div class="input-field col s3">
+                    <input id="creatureAction" type="text" name="creatureAction" list="previousActions" autocomplete="off">
+                    <label for="creatureAction">Action</label>
+                </div>
+                <datalist id="previousActions">
+                    <?php foreach (CombatAction::getAutocompleteByEncounterAmdActorId($post->ID, $currentCreature) as $previousAction): ?>
+                        <option value="<?= $previousAction ?>"><?= $previousAction ?></option>
+                    <?php endforeach; ?>
+                </datalist>
+                <div class="input-field col s3">
+                    <select id="affectedCreatures" name="affectedCreatures[]" multiple>
+                        <?php foreach ($creatures as $id => $creature): ?>
+                            <option value="<?= BaseFunctions::escape($id, 'attr') ?>"><?= BaseFunctions::escape($creature->getName(), 'html') ?> (<?= BaseFunctions::escape($creature->getCurrentHp(), 'html') ?>)</option>
+                        <?php endforeach; ?>
+                    </select>
+                    <label for="affectedCreatures">Target</label>
+                </div>
+                <div class="input-field col s3">
+                    <input id="damage" type="number" name="damage">
+                    <label for="damage">Damage</label>
+                </div>
+            </div>
+            <div class="row">
+                <button type="submit" style="display: none;">Submit Action</button>
+                <a href="<?= $nextCreatureUrl ?>" class="btn">Next Monster</a>
+            </div>
+        </form>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * @param Creature[] $creatures
+     *
+     * @return string
+     */
+    private static function getActionLog(array $creatures): string
+    {
+        global $post;
+        $actions = CombatAction::findByEncounterId($post->ID, 'id', 'DESC');
+        ob_start();
+        foreach ($actions as $action) {
+            $actor = $creatures[$action->getActor()];
+            if ($actor instanceof Player && $actor->getPostId() !== null) {
+                ?>
+            <div class="modal" id="player_<?= $actor->getId() ?>">
+                <div class="modal-content">[pc header="<?= $actor->getName() ?>" id="<?= $actor->getPostId() ?>"]</div></div><?php
+            }
+        }
+        ?>
+        <table class="striped">
+            <?php
+            foreach ($actions as $action) {
+                $actorHtml             = self::getCreatureHtml($creatures[$action->getActor()]);
+                $affectedCreaturesHtml = [];
+                foreach ($action->getAffectedCreatures() as $affectedCreatureId) {
+                    $affectedCreaturesHtml[] = self::getCreatureHtml($creatures[$affectedCreatureId]);
+                }
+                $affectedCreaturesHtml = BaseFunctions::arrayToEnglish($affectedCreaturesHtml);
+                $killsHtml = [];
+                foreach ($action->getKills() as $killId) {
+                    $killsHtml[] = self::getCreatureHtml($creatures[$killId]);
+                }
+                $killsHtml = BaseFunctions::arrayToEnglish($killsHtml);
+                ?>
+                <tr id="logRow_<?= $action->getId() ?>">
+                    <td><?= $actorHtml ?></td>
+                    <td><?= BaseFunctions::escape($action->getAction(), 'html') ?></td>
+                    <td><?= $affectedCreaturesHtml ?></td>
+                    <td>dealing</td>
+                    <td><?= BaseFunctions::escape($action->getDamage(), 'html') ?></td>
+                    <td>damage</td>
+                    <td><?= !empty($killsHtml) ? 'killing' : ''?></td>
+                    <td><?= $killsHtml ?></td>
+                    <td><a href="javascript:void(0)" onclick="deleteLogEntry(<?= $action->getId() ?>)"><i class="material-icons">delete</i></a></td>
+                </tr>
+                <?php
+            }
+            ?>
+        </table>
+        <script>
+            function deleteLogEntry(entryId) {
+                jQuery.post(
+                    '<?= admin_url('admin-ajax.php') ?>',
+                    {
+                        action: 'mp_dd_encounters_delete_log_entry',
+                        id: entryId,
+                    },
+                    function (data) {
+                        if (generalFunctions.ajaxResponse(data)) {
+                            generalFunctions.removeElement(document.getElementById('logRow_' + entryId));
+                        }
+                    }
+                );
+            }
+        </script>
+        <?php
+        return ob_get_clean();
+    }
+
+    private static function getCreatureHtml(Creature $creature): string
+    {
+        if ($creature instanceof Player && $creature->getPostId() !== null) {
+            return '<a href="#player_' . $creature->getId() . '" class="modal-trigger">' . BaseFunctions::escape($creature->getName(), 'html') . '</a>';
+        } else {
+            return BaseFunctions::escape($creature->getName(), 'html');
+        }
     }
 
     public static function setupPostType(): void

@@ -1,5 +1,6 @@
 <?php
 
+use dd_encounters\models\CombatAction;
 use dd_encounters\models\Monster;
 use dd_encounters\models\Player;
 use mp_general\base\BaseFunctions;
@@ -9,6 +10,16 @@ use mp_general\exceptions\NotFoundException;
 if (!defined('ABSPATH')) {
     exit;
 }
+
+
+function mp_dd_encounters_delete_log_entry()
+{
+    $id         = BaseFunctions::sanitize($_POST['id'], 'int');
+    CombatAction::deleteByIds([$id]);
+    wp_die(json_encode(['id' => $id]));
+}
+
+add_action('wp_ajax_mp_dd_encounters_delete_log_entry', 'mp_dd_encounters_delete_log_entry', 10, 0);
 
 function mp_dd_encounters_save_player()
 {

@@ -11,9 +11,15 @@ namespace dd_encounters\models;
 
 interface Creature
 {
+    public function getId(): int;
+
     public function getInitiative(): ?int;
 
     public function getCurrentHp(): ?int;
 
     public function getName(): string;
+
+    public function addDamage(int $damage): bool;
+
+    public function save(): bool;
 }

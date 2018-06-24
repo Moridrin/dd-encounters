@@ -152,6 +152,16 @@ class Player extends Model implements Creature
         return $this;
     }
 
+    public function addDamage(int $damage): bool
+    {
+        $this->setCurrentHp($this->getCurrentHp() - $damage);
+        if ($this->getCurrentHp() < 0) {
+            $this->setCurrentHp(0);
+            return true;
+        }
+        return false;
+    }
+
     public function getData(): array
     {
         return [
