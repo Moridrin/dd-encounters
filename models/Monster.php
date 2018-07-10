@@ -2,6 +2,7 @@
 
 namespace dd_encounters\models;
 
+use mp_general\base\BaseFunctions;
 use mp_general\base\Database;
 use mp_general\base\models\Model;
 
@@ -95,6 +96,15 @@ class Monster extends Model
 
     #region Instance
 
+    private $diceCount;
+    private $diceType;
+    private $modifier;
+
+    protected function __init()
+    {
+        $this->setHp($this->row['m_hp']);
+    }
+
     public function getName(): string
     {
         return $this->row['m_name'];
@@ -113,30 +123,31 @@ class Monster extends Model
 
     public function getMinHp(): int
     {
-        list($diceCount, $diceType, $modifier) = preg_split('/(D|\+)/', $this->getHp());
-        return ($diceCount + $modifier);
+        return ($this->diceCount + $this->modifier);
     }
 
     public function getMaxHp(): int
     {
-        list($diceCount, $diceType, $modifier) = preg_split('/(D|\+)/', $this->getHp());
-        return (($diceCount * $diceType) + $modifier);
+        return (($this->diceCount * $this->diceType) + $this->modifier);
     }
 
     public function getGeneratedHp(): int
     {
-        list($diceCount, $diceType, $modifier) = preg_split('/(D|\+)/', $this->getHp());
         $generatedHp = 0;
-        for ($dice = 0; $dice < $diceCount; ++$dice) {
-            $generatedHp += random_int(1, $diceType);
+        for ($dice = 0; $dice < $this->diceCount; ++$dice) {
+            $generatedHp += random_int(1, $this->diceType);
         }
-        $generatedHp += $modifier;
+        $generatedHp += $this->modifier;
         return $generatedHp;
     }
 
     public function setHp(string $hp): self
     {
         $this->row['m_hp'] = $hp;
+        list($diceCount, $diceType, $modifier) = preg_split('/(D|\+)/', $hp);
+        $this->diceCount = (int)$diceCount;
+        $this->diceType = (int)$diceType;
+        $this->modifier = intval($modifier);
         return $this;
     }
 

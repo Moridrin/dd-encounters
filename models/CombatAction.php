@@ -3,6 +3,7 @@
 namespace dd_encounters\models;
 
 use InvalidArgumentException;
+use mp_general\base\BaseFunctions;
 use mp_general\base\Database;
 use mp_general\base\models\Model;
 
@@ -56,7 +57,7 @@ class CombatAction extends Model
      *
      * @return CombatAction[]
      */
-    public static function findByEncounterId(int $encounterId, string $orderBy = 'id', string $order = 'DESC'): array
+    public static function findByEncounterId(int $encounterId, string $orderBy = 'id', string $order = 'ASC'): array
     {
         return parent::_find('ca_encounterId = ' . $encounterId, $orderBy, $order);
     }
@@ -112,7 +113,7 @@ class CombatAction extends Model
 
     protected static function _getDatabaseFields(): array
     {
-        return ['`ca_encounterId` INT NOT NULL', '`ca_actor` VARCHAR(50) NOT NULL', '`ca_affectedCreatures` TEXT NOT NULL', '`ca_action` VARCHAR(255)', '`ca_damage` INT NOT NULL', '`ca_kills` TEXT NULL'];
+        return ['`ca_encounterId` INT NOT NULL', '`ca_actor` VARCHAR(50) NOT NULL', '`ca_affectedCreatures` TEXT NOT NULL', '`ca_action` VARCHAR(255)', '`ca_damage` TEXT NOT NULL'];
     }
 
     public static function getDatabaseCreateQuery(int $blogId = null): string

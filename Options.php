@@ -41,8 +41,8 @@ abstract class Options
             $order   = BaseFunctions::sanitize(isset($_GET['order']) ? $_GET['order'] : 'asc', 'text');
             $addNew  = '<a href="javascript:void(0)" class="page-title-action" onclick="playerManager.addNew(\'the-list\', \'\')">Add New</a>';
             ?>
-            <h1 class="wp-heading-inline"><span>Players</span><?= current_user_can('manage_shared_base_fields') ? $addNew : '' ?></h1>
-            <?php mp_ssv_show_table(Player::class, $orderBy, $order, current_user_can('edit_monsters')); ?>
+            <h1 class="wp-heading-inline"><span>Players</span><?= current_user_can('edit_players') ? $addNew : '' ?></h1>
+            <?php mp_ssv_show_table(Player::class, $orderBy, $order, current_user_can('edit_players')); ?>
         </div>
         <?php
     }
@@ -102,8 +102,8 @@ abstract class Options
             $order   = BaseFunctions::sanitize(isset($_GET['order']) ? $_GET['order'] : 'asc', 'text');
             $addNew  = '<a href="javascript:void(0)" class="page-title-action" onclick="monsterManager.addNew(\'the-list\', \'\')">Add New</a>';
             ?>
-            <h1 class="wp-heading-inline"><span>Monsters</span><?= current_user_can('manage_shared_base_fields') ? $addNew : '' ?></h1>
-            <?php mp_ssv_show_table(Monster::class, $orderBy, $order, current_user_can('edit_players')); ?>
+            <h1 class="wp-heading-inline"><span>Monsters</span><?= current_user_can('edit_monsters') ? $addNew : '' ?></h1>
+            <?php mp_ssv_show_table(Monster::class, $orderBy, $order, current_user_can('edit_monsters')); ?>
             <h1>Import</h1>
             <h2>From CSV</h2>
             <form method="post" enctype="multipart/form-data">
