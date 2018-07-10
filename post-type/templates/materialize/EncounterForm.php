@@ -1,6 +1,6 @@
 <?php
 
-namespace dd_encounters\PostType\Templates;
+namespace dd_encounters\PostType\Templates\standard;
 
 use dd_encounters\models\CombatAction;
 use dd_encounters\models\CombatMonster;

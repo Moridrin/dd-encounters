@@ -32,11 +32,11 @@ abstract class Encounter
         if (BaseFunctions::isValidPOST(null)) {
             switch ($_POST['action']) {
                 case 'encounterSetup':
-                    require_once 'templates/EncounterSetup.php';
+                    require_once 'templates/standard/EncounterSetup.php';
                     EncounterSetup::process($post->ID);
                     break;
                 case 'saveCombatAction':
-                    require_once 'templates/EncounterForm.php';
+                    require_once 'templates/standard/EncounterForm.php';
                     EncounterForm::process($post->ID);
                     break;
             }
@@ -57,10 +57,10 @@ abstract class Encounter
             }
         }
         if ($startSetup) {
-            require_once 'templates/EncounterSetup.php';
+            require_once 'templates/standard/EncounterSetup.php';
             return EncounterSetup::show($post->ID, $content);
         } else {
-            require_once 'templates/EncounterForm.php';
+            require_once 'templates/standard/EncounterForm.php';
             return EncounterForm::show($post->ID, $content);
         }
     }

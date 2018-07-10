@@ -15,6 +15,8 @@ interface Creature
 
     public function getInitiative(): ?int;
 
+    public function getMaxHp(): ?int;
+
     public function getCurrentHp(): ?int;
 
     public function getName(): string;

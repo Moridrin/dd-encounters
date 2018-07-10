@@ -141,6 +141,11 @@ class Player extends Model implements Creature
         return $this;
     }
 
+    public function getMaxHp(): int
+    {
+        return $this->getHp();
+    }
+
     public function getCurrentHp(): ?int
     {
         return $this->row['p_currentHp'];
