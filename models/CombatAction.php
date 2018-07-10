@@ -2,6 +2,7 @@
 
 namespace dd_encounters\models;
 
+use InvalidArgumentException;
 use mp_general\base\Database;
 use mp_general\base\models\Model;
 
@@ -12,9 +13,12 @@ if (!defined('ABSPATH')) {
 class CombatAction extends Model
 {
     #region Class
-    public static function create(int $encounterId, string $actor, array $affectedCreatures, ?string $action, int $damage, array $kills): ?int
+    public static function create(int $encounterId, string $actor, array $affectedCreatures, ?string $action, array $damage): ?int
     {
-        return parent::_create(['ca_encounterId' => $encounterId, 'ca_actor' => $actor, 'ca_affectedCreatures' => json_encode($affectedCreatures), 'ca_action' => $action, 'ca_damage' => $damage, 'ca_kills' => json_encode($kills)]);
+        if ($affectedCreatures !== array_keys($damage)) {
+            throw new InvalidArgumentException('The keys of the damage array should equal the keys of the affected creatures array.');
+        }
+        return parent::_create(['ca_encounterId' => $encounterId, 'ca_actor' => $actor, 'ca_affectedCreatures' => json_encode($affectedCreatures), 'ca_action' => $action, 'ca_damage' => json_encode($damage)]);
     }
 
     /**
@@ -24,7 +28,7 @@ class CombatAction extends Model
      *
      * @return Player[]
      */
-    public static function getAll(string $orderBy = 'id', string $order = 'ASC', string $key = 'id'): array
+    public static function getAll(string $orderBy = 'id', string $order = 'DESC', string $key = 'id'): array
     {
         return parent::_getAll($orderBy, $order, $key);
     }
@@ -40,7 +44,7 @@ class CombatAction extends Model
         return parent::_findById($id);
     }
 
-    public static function findByIds(array $ids, string $orderBy = 'id', string $order = 'ASC'): array
+    public static function findByIds(array $ids, string $orderBy = 'id', string $order = 'DESC'): array
     {
         return parent::_findByIds($ids, $orderBy, $order);
     }
@@ -52,7 +56,7 @@ class CombatAction extends Model
      *
      * @return CombatAction[]
      */
-    public static function findByEncounterId(int $encounterId, string $orderBy = 'id', string $order = 'ASC'): array
+    public static function findByEncounterId(int $encounterId, string $orderBy = 'id', string $order = 'DESC'): array
     {
         return parent::_find('ca_encounterId = ' . $encounterId, $orderBy, $order);
     }
@@ -65,7 +69,7 @@ class CombatAction extends Model
      *
      * @return CombatAction[]
      */
-    public static function findByEncounterIdAndAffectedCreature(int $encounterId, string $affectedCreature, string $orderBy = 'id', string $order = 'ASC'): array
+    public static function findByEncounterIdAndAffectedCreature(int $encounterId, string $affectedCreature, string $orderBy = 'id', string $order = 'DESC'): array
     {
         return parent::_find('ca_encounterId = ' . $encounterId . ' AND JSON_SEARCH(ca_affectedCreatures, "all", "' . $affectedCreature . '") IS NOT NULL', $orderBy, $order);
     }
@@ -79,7 +83,7 @@ class CombatAction extends Model
     public static function getAutocompleteByEncounterAmdActorId(int $encounterId, int $actorId): array
     {
         global $wpdb;
-        $table   = static::getDatabaseTableName();
+        $table           = static::getDatabaseTableName();
         $previousActions = $wpdb->get_results("SELECT ca_action FROM $table WHERE ca_encounterId = $encounterId AND ca_actor = $actorId", ARRAY_A);
         $previousActions = array_count_values(array_column($previousActions, 'ca_action'));
         arsort($previousActions);
@@ -121,13 +125,13 @@ class CombatAction extends Model
     public function __init(): void
     {
         $this->row['ca_affectedCreatures'] = json_decode($this->row['ca_affectedCreatures'], true);
-        $this->row['ca_kills']             = json_decode($this->row['ca_kills'], true);
+        $this->row['ca_damage']            = json_decode($this->row['ca_damage'], true);
     }
 
     public function _beforeSave(): bool
     {
         $this->row['ca_affectedCreatures'] = json_encode($this->row['ca_affectedCreatures']);
-        $this->row['ca_kills']             = json_encode($this->row['ca_kills']);
+        $this->row['ca_damage']            = json_encode($this->row['ca_damage']);
         return true;
     }
 
@@ -162,25 +166,14 @@ class CombatAction extends Model
     }
 
 
-    public function getDamage(): int
+    public function getDamage(): array
     {
         return $this->row['ca_damage'];
     }
 
-    public function setDamage(int $damage)
+    public function setDamage(array $damage)
     {
         $this->row['ca_damage'] = $damage;
-    }
-
-    public function getKills(): array
-    {
-        return $this->row['ca_kills'];
-    }
-
-    public function setKills(array $kills): self
-    {
-        $this->row['ca_kills'] = $kills;
-        return $this;
     }
 
     public function getData(): array
@@ -209,12 +202,6 @@ class CombatAction extends Model
                 'onclick'   => 'playerManager.edit(\'' . $this->getId() . '\')',
                 'linkClass' => 'edit',
                 'linkText'  => 'Edit',
-            ],
-            [
-                'spanClass' => 'trash',
-                'onclick'   => 'playerManager.deleteRow(\'' . $this->getId() . '\')',
-                'linkClass' => 'submitdelete',
-                'linkText'  => 'Trash',
             ],
         ];
     }

@@ -2,11 +2,11 @@
 
 namespace dd_encounters\PostType;
 
-use dd_encounters\models\CombatAction;
 use dd_encounters\models\CombatMonster;
-use dd_encounters\models\Creature;
 use dd_encounters\models\Monster;
 use dd_encounters\models\Player;
+use dd_encounters\PostType\Templates\EncounterForm;
+use dd_encounters\PostType\Templates\EncounterSetup;
 use Exception;
 use mp_general\base\BaseFunctions;
 
@@ -29,11 +29,26 @@ abstract class Encounter
             return $content;
         }
 
-        $monsterCounts  = get_post_meta($post->ID, 'monsters', true);
+        if (BaseFunctions::isValidPOST(null)) {
+            switch ($_POST['action']) {
+                case 'encounterSetup':
+                    require_once 'templates/EncounterSetup.php';
+                    EncounterSetup::process($post->ID);
+                    break;
+                case 'saveCombatAction':
+                    require_once 'templates/EncounterForm.php';
+                    EncounterForm::process($post->ID);
+                    break;
+            }
+            BaseFunctions::redirect();
+            return '<h1>Processing...</h1>';
+        }
+
+        $players = Player::findByIds(get_post_meta($post->ID, 'activePlayers', true), 'p_initiative', 'DESC');
         $combatMonsters = CombatMonster::findByEncounterId($post->ID);
-        $players        = Player::findByIds(get_post_meta($post->ID, 'activePlayers', true), 'p_initiative', 'DESC');
-        $startSetup     = empty($combatMonsters);
+        $startSetup = empty($combatMonsters);
         if ($startSetup === false) {
+            /** @var Player $player */
             foreach ($players as $player) {
                 if ($player->getInitiative() === null) {
                     $startSetup = true;
@@ -42,262 +57,11 @@ abstract class Encounter
             }
         }
         if ($startSetup) {
-            $result = self::setupEncounter($monsterCounts, $players);
-            if ($result !== null) {
-                return $result . $content;
-            }
-            $combatMonsters = CombatMonster::findByEncounterId($post->ID);
-        }
-        /** @var Creature[] $creatures */
-        $creatures = array_merge($combatMonsters, $players);
-        usort(
-            $creatures,
-            function (Creature $a, Creature $b) {
-                return $b->getInitiative() - $a->getInitiative();
-            }
-        );
-        $actionForm = self::actionForm($creatures);
-        $actionLog  = self::getActionLog($creatures);
-        return $actionForm . $actionLog . $content;
-    }
-
-    private static function setupEncounter(array $monsterCounts, array $players): ?string
-    {
-        global $post;
-        if (BaseFunctions::isValidPOST(null) && $_POST['action'] === 'createMonsters') {
-            foreach ($players as $playerId => $player) {
-                $player
-                    ->setInitiative(BaseFunctions::sanitize($_POST['p_initiative'][$playerId], 'int'))
-                    ->setCurrentHp(BaseFunctions::sanitize($_POST['p_currentHp'][$playerId], 'int'))
-                    ->save()
-                ;
-            }
-            foreach (BaseFunctions::sanitize($_POST['name'], 'text') as $id => $name) {
-                list($monsterId, $combatMonsterId) = explode('_', $id);
-                CombatMonster::create(
-                    $post->ID,
-                    $monsterId,
-                    $name,
-                    BaseFunctions::sanitize($_POST['hp'][$id], 'int'),
-                    BaseFunctions::sanitize($_POST['currentHp'][$id], 'int'),
-                    BaseFunctions::sanitize($_POST['initiative'][$id], 'int')
-                );
-            }
-            return null;
-        }
-
-        $monsters = Monster::findByIds(array_keys($monsterCounts));
-        $uniqueId = 0;
-        ob_start();
-        ?>
-        <form method="post">
-            <input type="hidden" name="action" value="createMonsters">
-            <?php
-            foreach ($players as $playerId => $player) {
-                ?>
-                <div class="row">
-                    <div class="col s3">
-                        <label for="player_<?= $uniqueId ?>">Player</label>
-                        <input id="player_<?= $uniqueId ?>" type="text" value="<?= $player->getName() ?>" readonly required>
-                    </div>
-                    <div class="col s3">
-                        <label for="initiative_<?= $uniqueId ?>">Initiative</label>
-                        <input id="initiative_<?= $uniqueId ?>" type="number" class="validate" min="1" name="p_initiative[<?= $playerId ?>]" value="" required>
-                    </div>
-                    <div class="col s3">
-                        <label for="hp_<?= $uniqueId ?>">HP</label>
-                        <input id="hp_<?= $uniqueId ?>" type="number" value="<?= $player->getHp() ?>" readonly required>
-                    </div>
-                    <div class="col s3">
-                        <label for="currentHp_<?= $uniqueId ?>">Current HP</label>
-                        <input id="currentHp_<?= $uniqueId ?>" type="number" class="validate" min="0" name="p_currentHp[<?= $playerId ?>]" value="<?= $player->getCurrentHp() ?: $player->getHp() ?>" required>
-                    </div>
-                </div>
-                <?php
-                ++$uniqueId;
-            }
-            foreach ($monsterCounts as $monsterId => $monsterCount) {
-                $monster = $monsters[$monsterId];
-                for ($i = 1; $i <= $monsterCount; ++$i) {
-                    $generatedHp = $monster->getGeneratedHp();
-                    ?>
-                    <div class="row">
-                        <div class="col s3">
-                            <label for="player_<?= $uniqueId ?>">Monster</label>
-                            <input id="player_<?= $uniqueId ?>" type="text" name="name[<?= $monsterId ?>_<?= $i ?>]" value="<?= $monster->getName() ?> <?= $i ?>" required>
-                        </div>
-                        <div class="col s3">
-                            <label for="initiative_<?= $uniqueId ?>">Initiative</label>
-                            <input id="initiative_<?= $uniqueId ?>" type="number" class="validate" min="<?= $monster->getMinInitiative() ?>" max="<?= $monster->getMaxInitiative() ?>" name="initiative[<?= $monsterId ?>_<?= $i ?>]" value="<?= $monster->getGeneratedInitiative() ?>" required>
-                        </div>
-                        <div class="col s3">
-                            <label for="hp_<?= $uniqueId ?>">HP</label>
-                            <input id="hp_<?= $uniqueId ?>" type="number" class="validate" min="<?= $monster->getMinHp() ?>" max="<?= $monster->getMaxHp() ?>" name="hp[<?= $monsterId ?>_<?= $i ?>]" value="<?= $generatedHp ?>" required>
-                        </div>
-                        <div class="col s3">
-                            <label for="currentHp_<?= $uniqueId ?>">Current HP</label>
-                            <input id="currentHp_<?= $uniqueId ?>" type="number" class="validate" min="0" name="currentHp[<?= $monsterId ?>_<?= $i ?>]" value="<?= $generatedHp ?>" required>
-                        </div>
-                    </div>
-                    <?php
-                    ++$uniqueId;
-                }
-            }
-            ?>
-            <button type="submit" class="btn">Setup Players</button>
-        </form>
-        <?php
-        return ob_get_clean();
-    }
-
-    /**
-     * @param Creature[] $creatures
-     *
-     * @return string
-     */
-    private static function actionForm(array $creatures): string
-    {
-        global $post;
-        if (BaseFunctions::isValidPOST(null) && $_POST['action'] === 'saveCombatAction') {
-            $actor             = BaseFunctions::sanitize($_POST['actor'], 'text');
-            $affectedCreatures = BaseFunctions::sanitize($_POST['affectedCreatures'], 'int');
-            $creatureAction    = BaseFunctions::sanitize($_POST['creatureAction'], 'text');
-            $damage            = BaseFunctions::sanitize($_POST['damage'], 'int');
-            $kills             = [];
-            foreach ($affectedCreatures as $affectedCreatureId) {
-                $affectedCreature = $creatures[$affectedCreatureId];
-                $died             = $affectedCreature->addDamage($damage);
-                $affectedCreature->save();
-                if ($died) {
-                    $kills[] = $affectedCreatureId;
-                }
-            }
-            CombatAction::create($post->ID, $actor, $affectedCreatures, $creatureAction, $damage, $kills);
-        }
-        $currentCreature = BaseFunctions::sanitize($_GET['activeCreature'] ?? 0, 'int');
-        $nextCreatureUrl = BaseFunctions::getCurrentUrlWithArguments(['activeCreature' => ($currentCreature + 1) % count($creatures)]);
-        ob_start();
-        ?>
-        <form method="post">
-            <input type="hidden" name="action" value="saveCombatAction">
-            <div class="row">
-                <div class="input-field col s3">
-                    <select id="actor" name="actor">
-                        <?php
-                        foreach ($creatures as $id => $creature) {
-                            ?>
-                            <option value="<?= BaseFunctions::escape($id, 'attr') ?>" <?= selected($currentCreature, $id) ?>><?= BaseFunctions::escape($creature->getName(), 'html') ?> (<?= BaseFunctions::escape($creature->getCurrentHp(), 'html') ?>)</option><?php
-                        }
-                        ?>
-                    </select>
-                    <label for="actor">Actor</label>
-                </div>
-                <div class="input-field col s3">
-                    <input id="creatureAction" type="text" name="creatureAction" list="previousActions" autocomplete="off">
-                    <label for="creatureAction">Action</label>
-                </div>
-                <datalist id="previousActions">
-                    <?php foreach (CombatAction::getAutocompleteByEncounterAmdActorId($post->ID, $currentCreature) as $previousAction): ?>
-                        <option value="<?= $previousAction ?>"><?= $previousAction ?></option>
-                    <?php endforeach; ?>
-                </datalist>
-                <div class="input-field col s3">
-                    <select id="affectedCreatures" name="affectedCreatures[]" multiple>
-                        <?php foreach ($creatures as $id => $creature): ?>
-                            <option value="<?= BaseFunctions::escape($id, 'attr') ?>"><?= BaseFunctions::escape($creature->getName(), 'html') ?> (<?= BaseFunctions::escape($creature->getCurrentHp(), 'html') ?>)</option>
-                        <?php endforeach; ?>
-                    </select>
-                    <label for="affectedCreatures">Target</label>
-                </div>
-                <div class="input-field col s3">
-                    <input id="damage" type="number" name="damage">
-                    <label for="damage">Damage</label>
-                </div>
-            </div>
-            <div class="row">
-                <button type="submit" style="display: none;">Submit Action</button>
-                <a href="<?= $nextCreatureUrl ?>" class="btn">Next Monster</a>
-            </div>
-        </form>
-        <?php
-        return ob_get_clean();
-    }
-
-    /**
-     * @param Creature[] $creatures
-     *
-     * @return string
-     */
-    private static function getActionLog(array $creatures): string
-    {
-        global $post;
-        $actions = CombatAction::findByEncounterId($post->ID, 'id', 'DESC');
-        ob_start();
-        foreach ($actions as $action) {
-            $actor = $creatures[$action->getActor()];
-            if ($actor instanceof Player && $actor->getPostId() !== null) {
-                ?>
-            <div class="modal" id="player_<?= $actor->getId() ?>">
-                <div class="modal-content">[pc header="<?= $actor->getName() ?>" id="<?= $actor->getPostId() ?>"]</div></div><?php
-            }
-        }
-        ?>
-        <table class="striped">
-            <?php
-            foreach ($actions as $action) {
-                $actorHtml             = self::getCreatureHtml($creatures[$action->getActor()]);
-                $affectedCreaturesHtml = [];
-                foreach ($action->getAffectedCreatures() as $affectedCreatureId) {
-                    $affectedCreaturesHtml[] = self::getCreatureHtml($creatures[$affectedCreatureId]);
-                }
-                $affectedCreaturesHtml = BaseFunctions::arrayToEnglish($affectedCreaturesHtml);
-                $killsHtml = [];
-                foreach ($action->getKills() as $killId) {
-                    $killsHtml[] = self::getCreatureHtml($creatures[$killId]);
-                }
-                $killsHtml = BaseFunctions::arrayToEnglish($killsHtml);
-                ?>
-                <tr id="logRow_<?= $action->getId() ?>">
-                    <td><?= $actorHtml ?></td>
-                    <td><?= BaseFunctions::escape($action->getAction(), 'html') ?></td>
-                    <td><?= $affectedCreaturesHtml ?></td>
-                    <td>dealing</td>
-                    <td><?= BaseFunctions::escape($action->getDamage(), 'html') ?></td>
-                    <td>damage</td>
-                    <td><?= !empty($killsHtml) ? 'killing' : ''?></td>
-                    <td><?= $killsHtml ?></td>
-                    <td><a href="javascript:void(0)" onclick="deleteLogEntry(<?= $action->getId() ?>)"><i class="material-icons">delete</i></a></td>
-                </tr>
-                <?php
-            }
-            ?>
-        </table>
-        <script>
-            function deleteLogEntry(entryId) {
-                jQuery.post(
-                    '<?= admin_url('admin-ajax.php') ?>',
-                    {
-                        action: 'mp_dd_encounters_delete_log_entry',
-                        id: entryId,
-                    },
-                    function (data) {
-                        if (generalFunctions.ajaxResponse(data)) {
-                            generalFunctions.removeElement(document.getElementById('logRow_' + entryId));
-                        }
-                    }
-                );
-            }
-        </script>
-        <?php
-        return ob_get_clean();
-    }
-
-    private static function getCreatureHtml(Creature $creature): string
-    {
-        if ($creature instanceof Player && $creature->getPostId() !== null) {
-            return '<a href="#player_' . $creature->getId() . '" class="modal-trigger">' . BaseFunctions::escape($creature->getName(), 'html') . '</a>';
+            require_once 'templates/EncounterSetup.php';
+            return EncounterSetup::show($post->ID, $content);
         } else {
-            return BaseFunctions::escape($creature->getName(), 'html');
+            require_once 'templates/EncounterForm.php';
+            return EncounterForm::show($post->ID, $content);
         }
     }
 

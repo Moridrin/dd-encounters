@@ -75,7 +75,7 @@ class CombatMonster extends Model implements Creature
 
     public static function getDatabaseTableName(int $blogId = null): string
     {
-        return Database::getPrefixForBlog($blogId) . 'combat_monster';
+        return Database::getPrefixForBlog($blogId) . 'dd_combat_monster';
     }
 
     protected static function _getDatabaseFields(): array
