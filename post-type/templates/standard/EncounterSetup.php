@@ -1,12 +1,9 @@
 <?php
 
-namespace dd_encounters\PostType\Templates;
+namespace dd_encounters\PostType\Templates\Standard;
 
-use dd_encounters\models\CombatMonster;
 use dd_encounters\models\Monster;
 use dd_encounters\models\Player;
-use Exception;
-use mp_general\base\BaseFunctions;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -14,37 +11,6 @@ if (!defined('ABSPATH')) {
 
 abstract class EncounterSetup
 {
-    /**
-     * @param int $postId
-     *
-     * @throws Exception
-     */
-    public static function process(int $postId): void
-    {
-        if (!BaseFunctions::isValidPOST(null)) {
-            throw new Exception('Not a valid Post. Not Processing.');
-        }
-        if ($_POST['action'] !== 'encounterSetup') {
-            throw new Exception('Not a post request to process the setup for the encounter. Not Processing.');
-        }
-        foreach (Player::findByIds(get_post_meta($postId, 'activePlayers', true)) as $playerId => $player) {
-            $player
-                ->setInitiative(BaseFunctions::sanitize($_POST['p_initiative'][$playerId], 'int'))
-                ->setCurrentHp(BaseFunctions::sanitize($_POST['p_currentHp'][$playerId], 'int'))
-                ->save()
-            ;
-        }
-        foreach (BaseFunctions::sanitize($_POST['name'], 'text') as $id => $name) {
-            CombatMonster::create(
-                $postId,
-                explode('_', $id)[0],
-                $name,
-                BaseFunctions::sanitize($_POST['hp'][$id], 'int'),
-                BaseFunctions::sanitize($_POST['currentHp'][$id], 'int'),
-                BaseFunctions::sanitize($_POST['initiative'][$id], 'int')
-            );
-        }
-    }
 
     /**
      * @param int    $postId

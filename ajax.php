@@ -72,6 +72,9 @@ function mp_dd_encounters_save_monster()
     $hp                 = BaseFunctions::sanitize($_POST['hp'], 'text');
     $initiativeModifier = BaseFunctions::sanitize($_POST['initiativeModifier'], 'int');
     $url                = BaseFunctions::sanitize($_POST['url'], 'text');
+    if ($initiativeModifier === null) {
+        $initiativeModifier = 0;
+    }
     if ($id === null) {
         $id = Monster::create($name, $hp, $initiativeModifier, $url);
         if ($id === null) {

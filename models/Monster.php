@@ -2,7 +2,6 @@
 
 namespace dd_encounters\models;
 
-use mp_general\base\BaseFunctions;
 use mp_general\base\Database;
 use mp_general\base\models\Model;
 

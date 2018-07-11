@@ -1,12 +1,11 @@
 <?php
 
-namespace dd_encounters\PostType\Templates\standard;
+namespace dd_encounters\PostType\Templates\Materialize;
 
 use dd_encounters\models\CombatAction;
 use dd_encounters\models\CombatMonster;
 use dd_encounters\models\Creature;
 use dd_encounters\models\Player;
-use Exception;
 use mp_general\base\BaseFunctions;
 
 if (!defined('ABSPATH')) {
@@ -15,37 +14,6 @@ if (!defined('ABSPATH')) {
 
 abstract class EncounterForm
 {
-    /**
-     * @param int $postId
-     *
-     * @throws Exception
-     */
-    public static function process(int $postId): void
-    {
-        $players        = Player::findByIds(get_post_meta($postId, 'activePlayers', true), 'p_initiative', 'DESC');
-        $combatMonsters = CombatMonster::findByEncounterId($postId);
-        /** @var Creature[] $creatures */
-        $creatures = array_merge($players, $combatMonsters);
-
-        if (!BaseFunctions::isValidPOST(null)) {
-            throw new Exception('Not a valid Post. Not Processing.');
-        }
-        if ($_POST['action'] !== 'saveCombatAction') {
-            throw new Exception('Not a post request to process the setup for the encounter. Not Processing.');
-        }
-        $actor             = BaseFunctions::sanitize($_POST['actor'], 'text');
-        $affectedCreatures = BaseFunctions::sanitize($_POST['affectedCreatures'], 'int');
-        $creatureAction    = BaseFunctions::sanitize($_POST['creatureAction'], 'text');
-        $damage            = BaseFunctions::sanitize($_POST['damage'], 'int');
-        $damage            = array_filter(
-            $damage,
-            function ($key) use ($affectedCreatures) {
-                return in_array($key, $affectedCreatures);
-            },
-            ARRAY_FILTER_USE_KEY
-        );
-        CombatAction::create($postId, $actor, $affectedCreatures, $creatureAction, $damage);
-    }
 
     public static function show(int $postId, string $content): string
     {
@@ -114,6 +82,7 @@ abstract class EncounterForm
                         </div>
                     <?php endforeach; ?>
                 </div>
+                <!--suppress JSUnusedLocalSymbols -->
                 <script>
                     function targetChanged() {
                         let select = document.getElementById('affectedCreatures');

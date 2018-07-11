@@ -2,11 +2,15 @@
 
 namespace dd_encounters\PostType;
 
+use dd_encounters\models\CombatAction;
 use dd_encounters\models\CombatMonster;
+use dd_encounters\models\Creature;
 use dd_encounters\models\Monster;
 use dd_encounters\models\Player;
-use dd_encounters\PostType\Templates\EncounterForm;
-use dd_encounters\PostType\Templates\EncounterSetup;
+use dd_encounters\PostType\Templates\Materialize\EncounterForm as MaterializeEncounterForm;
+use dd_encounters\PostType\Templates\Materialize\EncounterSetup as MaterializeEncounterSetup;
+use dd_encounters\PostType\Templates\Standard\EncounterForm as StandardEncounterForm;
+use dd_encounters\PostType\Templates\Standard\EncounterSetup as StandardEncounterSetup;
 use Exception;
 use mp_general\base\BaseFunctions;
 
@@ -33,20 +37,20 @@ abstract class Encounter
             switch ($_POST['action']) {
                 case 'encounterSetup':
                     require_once 'templates/standard/EncounterSetup.php';
-                    EncounterSetup::process($post->ID);
+                    self::processEncounterSetup($post->ID);
                     break;
                 case 'saveCombatAction':
                     require_once 'templates/standard/EncounterForm.php';
-                    EncounterForm::process($post->ID);
+                    self::processEncounterForm($post->ID);
                     break;
             }
             BaseFunctions::redirect();
             return '<h1>Processing...</h1>';
         }
 
-        $players = Player::findByIds(get_post_meta($post->ID, 'activePlayers', true), 'p_initiative', 'DESC');
+        $players        = Player::findByIds(get_post_meta($post->ID, 'activePlayers', true), 'p_initiative', 'DESC');
         $combatMonsters = CombatMonster::findByEncounterId($post->ID);
-        $startSetup = empty($combatMonsters);
+        $startSetup     = empty($combatMonsters);
         if ($startSetup === false) {
             /** @var Player $player */
             foreach ($players as $player) {
@@ -57,12 +61,86 @@ abstract class Encounter
             }
         }
         if ($startSetup) {
-            require_once 'templates/standard/EncounterSetup.php';
-            return EncounterSetup::show($post->ID, $content);
+            if (current_theme_supports('materialize')) {
+                require_once 'templates/materialize/EncounterSetup.php';
+                return MaterializeEncounterSetup::show($post->ID, $content);
+            } else {
+                require_once 'templates/standard/EncounterSetup.php';
+                return StandardEncounterSetup::show($post->ID, $content);
+            }
         } else {
-            require_once 'templates/standard/EncounterForm.php';
-            return EncounterForm::show($post->ID, $content);
+            if (current_theme_supports('materialize')) {
+                require_once 'templates/materialize/EncounterForm.php';
+                return MaterializeEncounterForm::show($post->ID, $content);
+            } else {
+                require_once 'templates/standard/EncounterForm.php';
+                return StandardEncounterForm::show($post->ID, $content);
+            }
         }
+    }
+
+    /**
+     * @param $postId
+     *
+     * @throws Exception
+     */
+    private static function processEncounterSetup($postId): void
+    {
+        if (!BaseFunctions::isValidPOST(null)) {
+            throw new Exception('Not a valid Post. Not Processing.');
+        }
+        if ($_POST['action'] !== 'encounterSetup') {
+            throw new Exception('Not a post request to process the setup for the encounter. Not Processing.');
+        }
+        foreach (Player::findByIds(get_post_meta($postId, 'activePlayers', true)) as $playerId => $player) {
+            $player
+                ->setInitiative(BaseFunctions::sanitize($_POST['p_initiative'][$playerId], 'int'))
+                ->setCurrentHp(BaseFunctions::sanitize($_POST['p_currentHp'][$playerId], 'int'))
+                ->save()
+            ;
+        }
+        foreach (BaseFunctions::sanitize($_POST['name'], 'text') as $id => $name) {
+            CombatMonster::create(
+                $postId,
+                explode('_', $id)[0],
+                $name,
+                BaseFunctions::sanitize($_POST['hp'][$id], 'int'),
+                BaseFunctions::sanitize($_POST['currentHp'][$id], 'int'),
+                BaseFunctions::sanitize($_POST['initiative'][$id], 'int')
+            );
+        }
+    }
+
+    /**
+     * @param int $postId
+     *
+     * @throws Exception
+     */
+    public static function processEncounterForm(int $postId): void
+    {
+        $players        = Player::findByIds(get_post_meta($postId, 'activePlayers', true), 'p_initiative', 'DESC');
+        $combatMonsters = CombatMonster::findByEncounterId($postId);
+        /** @var Creature[] $creatures */
+        $creatures = array_merge($players, $combatMonsters);
+
+        if (!BaseFunctions::isValidPOST(null)) {
+            throw new Exception('Not a valid Post. Not Processing.');
+        }
+        if ($_POST['action'] !== 'saveCombatAction') {
+            throw new Exception('Not a post request to process the setup for the encounter. Not Processing.');
+        }
+        $actor             = BaseFunctions::sanitize($_POST['actor'], 'text');
+        $affectedCreatures = BaseFunctions::sanitize($_POST['affectedCreatures'], 'int');
+        $creatureAction    = BaseFunctions::sanitize($_POST['creatureAction'], 'text');
+        $damage            = BaseFunctions::sanitize($_POST['damage'], 'int');
+        $damage            = array_filter(
+            $damage,
+            function ($key) use ($affectedCreatures) {
+                return in_array($key, $affectedCreatures);
+            },
+            ARRAY_FILTER_USE_KEY
+        );
+        CombatAction::create($postId, $actor, $affectedCreatures, $creatureAction, $damage);
     }
 
     public static function setupPostType(): void

@@ -8,7 +8,8 @@ let monsterManager = {
         let tr = document.createElement('tr');
         let properties = {
             name: '',
-            hp: '1D8',
+            hp: '1D8+0',
+            initiativeModifier: 0,
             url: '',
         };
 
