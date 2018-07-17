@@ -39,8 +39,9 @@ abstract class EncounterForm
      */
     private static function actionForm(int $postId, array $creatures): ?string
     {
-        $currentCreature = BaseFunctions::sanitize($_GET['activeCreature'] ?? 0, 'int');
-        $nextCreatureUrl = BaseFunctions::getCurrentUrlWithArguments(['activeCreature' => ($currentCreature + 1) % count($creatures)]);
+        $currentCreatureId = BaseFunctions::sanitize($_GET['activeCreature'] ?? 0, 'int');
+        $currentCreature   = $creatures[$currentCreatureId];
+        $nextCreatureUrl   = BaseFunctions::getCurrentUrlWithArguments(['activeCreature' => ($currentCreatureId + 1) % count($creatures)]);
         ob_start();
         ?>
         <form method="post">
@@ -51,18 +52,22 @@ abstract class EncounterForm
                         <?php
                         foreach ($creatures as $id => $creature) {
                             ?>
-                            <option value="<?= BaseFunctions::escape($id, 'attr') ?>" <?= selected($currentCreature, $id) ?>><?= BaseFunctions::escape($creature->getName(), 'html') ?> (<?= BaseFunctions::escape($creature->getCurrentHp(), 'html') ?>)</option><?php
+                            <option value="<?= BaseFunctions::escape($id, 'attr') ?>" <?= selected($currentCreatureId, $id) ?>><?= BaseFunctions::escape($creature->getName(), 'html') ?> (<?= BaseFunctions::escape($creature->getCurrentHp(), 'html') ?>)</option><?php
                         }
                         ?>
                     </select>
-                    <label for="actor">Actor</label>
+                    <?php if ($currentCreature->getUrl() !== ''): ?>
+                        <label for="actor"><a href="<?= BaseFunctions::escape($currentCreature->getUrl(), 'url') ?>" target="_blank">Actor</a></label>
+                    <?php else: ?>
+                        <label for="actor">Actor</label>
+                    <?php endif; ?>
                 </div>
                 <div class="input-field col s3">
                     <input id="creatureAction" type="text" name="creatureAction" list="previousActions" autocomplete="off">
                     <label for="creatureAction">Action</label>
                 </div>
                 <datalist id="previousActions">
-                    <?php foreach (CombatAction::getAutocompleteByEncounterAmdActorId($postId, $currentCreature) as $previousAction): ?>
+                    <?php foreach (CombatAction::getAutocompleteByEncounterAmdActorId($postId, $currentCreatureId) as $previousAction): ?>
                         <option value="<?= $previousAction ?>"><?= $previousAction ?></option>
                     <?php endforeach; ?>
                 </datalist>

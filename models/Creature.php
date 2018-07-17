@@ -24,4 +24,6 @@ interface Creature
     public function addDamage(int $damage): bool;
 
     public function save(): bool;
+
+    public function getUrl(): ?string;
 }

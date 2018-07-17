@@ -223,7 +223,7 @@ abstract class Encounter
         global $post;
         $players          = Player::getAll();
         $activePlayersIds = get_post_meta($post->ID, 'activePlayers', true);
-        if (!is_array($activePlayersIds)) {
+        if (!is_array($activePlayersIds) || empty($activePlayersIds)) {
             $activePlayersIds = array_column($players, 'id');
         }
         ?>

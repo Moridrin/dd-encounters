@@ -97,6 +97,8 @@ class CombatMonster extends Model implements Creature
     #endregion
 
     #region Instance
+    protected $monster;
+
     #region Getters & Setters
     public function getEncounterId(): int
     {
@@ -112,6 +114,18 @@ class CombatMonster extends Model implements Creature
     public function getMonsterId(): int
     {
         return $this->row['cm_monsterId'];
+    }
+
+    /**
+     * @return Monster
+     * @throws \mp_general\exceptions\NotFoundException
+     */
+    public function getMonster(): Monster
+    {
+        if ($this->monster === null) {
+            $this->monster = Monster::findById($this->row['cm_monsterId']);
+        }
+        return $this->monster;
     }
 
     public function setMonsterId(int $monsterId): self
@@ -172,6 +186,16 @@ class CombatMonster extends Model implements Creature
     {
         $this->row['cm_initiative'] = $initiative;
         return $this;
+    }
+
+
+    public function getUrl(): string
+    {
+        try {
+            return $this->getMonster()->getUrl();
+        } catch (NotFoundException $e) {
+            return '';
+        }
     }
 
     #endregion

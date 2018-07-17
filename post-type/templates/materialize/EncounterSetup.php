@@ -4,6 +4,7 @@ namespace dd_encounters\PostType\Templates\Materialize;
 
 use dd_encounters\models\Monster;
 use dd_encounters\models\Player;
+use \mp_general\base\BaseFunctions;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -33,8 +34,12 @@ abstract class EncounterSetup
                 ?>
                 <div class="row">
                     <div class="col s3">
-                        <label for="player_<?= $uniqueId ?>">Player</label>
-                        <input id="player_<?= $uniqueId ?>" type="text" value="<?= $player->getName() ?>" readonly required>
+                        <?php if ($player->getPostId() !== null): ?>
+                            <label for="player_<?= $uniqueId ?>"><a href="<?= BaseFunctions::escape(get_permalink($player->getPostId()), 'url') ?>" target="_blank">Player</a></label>
+                        <?php else: ?>
+                            <label for="player_<?= $uniqueId ?>">Player</label>
+                        <?php endif; ?>
+                        <input id="player_<?= $uniqueId ?>" type="text" value="<?= BaseFunctions::escape($player->getName(), 'html') ?>" readonly required>
                     </div>
                     <div class="col s3">
                         <label for="initiative_<?= $uniqueId ?>">Initiative</label>
@@ -59,8 +64,12 @@ abstract class EncounterSetup
                     ?>
                     <div class="row">
                         <div class="col s3">
-                            <label for="player_<?= $uniqueId ?>">Monster</label>
-                            <input id="player_<?= $uniqueId ?>" type="text" name="name[<?= $monsterId ?>_<?= $i ?>]" value="<?= $monster->getName() ?> <?= $i ?>" required>
+                            <?php if ($monster->getUrl() !== ''): ?>
+                                <label for="monster_<?= $uniqueId ?>"><a href="<?= BaseFunctions::escape($monster->getUrl(), 'url') ?>" target="_blank">Monster</a></label>
+                            <?php else: ?>
+                                <label for="monster_<?= $uniqueId ?>">Monster</label>
+                            <?php endif; ?>
+                            <input id="monster_<?= $uniqueId ?>" type="text" name="name[<?= $monsterId ?>_<?= $i ?>]" value="<?= BaseFunctions::escape($monster->getName(), 'html') ?><?= ($monsterCount > 1 ? ' ' . $i : '') ?>" required>
                         </div>
                         <div class="col s3">
                             <label for="initiative_<?= $uniqueId ?>">Initiative</label>

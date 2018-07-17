@@ -124,6 +124,11 @@ class Player extends Model implements Creature
         return $this->row['p_postId'];
     }
 
+    public function getUrl(): ?string
+    {
+        return get_permalink($this->row['p_postId']);
+    }
+
     public function setPostId(?int $postId): self
     {
         $this->row['p_postId'] = $postId;
