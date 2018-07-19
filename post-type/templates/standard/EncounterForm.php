@@ -163,23 +163,25 @@ abstract class EncounterForm
             $killsHtml = BaseFunctions::arrayToEnglish($killsHtml);
             $hurtHtml = BaseFunctions::arrayToEnglish($hurtHtml);
             $totalDamage = array_sum($action->getDamage());
-            ob_start();
-            ?>
-            <tr id="logRow_<?= $action->getId() ?>">
-                <td><?= $actorHtml ?></td>
-                <td><?= BaseFunctions::escape($action->getAction(), 'html') ?></td>
-                <td><?= $affectedCreaturesHtml ?></td>
-                <td><?= $totalDamage > 0 ? 'dealing a total of' : '' ?></td>
-                <td><?= $totalDamage > 0 ? BaseFunctions::escape($totalDamage, 'html') : '' ?></td>
-                <td><?= $totalDamage > 0 ? 'damage' : '' ?></td>
-                <td><?= !empty($killsHtml) ? 'killing' : '' ?></td>
-                <td><?= $killsHtml ?></td>
-                <td><?= !empty($hurtHtml) ? ((!empty($killsHtml) ? 'and ' : '') . 'severely hurting') : '' ?></td>
-                <td><?= $hurtHtml ?></td>
-                <td><a href="javascript:void(0)" onclick="deleteLogEntry(<?= $action->getId() ?>)"><i class="material-icons">delete</i></a></td>
-            </tr>
-            <?php
-            $rows[] = ob_get_clean();
+            if (apply_filters('dd_encounters_player_is_allowed_to_view_log', $action, $creatures) !== false) {
+                ob_start();
+                ?>
+                <tr id="logRow_<?= $action->getId() ?>">
+                    <td><?= $actorHtml ?></td>
+                    <td><?= BaseFunctions::escape($action->getAction(), 'html') ?></td>
+                    <td><?= $affectedCreaturesHtml ?></td>
+                    <td><?= $totalDamage > 0 ? 'dealing a total of' : '' ?></td>
+                    <td><?= $totalDamage > 0 ? BaseFunctions::escape($totalDamage, 'html') : '' ?></td>
+                    <td><?= $totalDamage > 0 ? 'damage' : '' ?></td>
+                    <td><?= !empty($killsHtml) ? 'killing' : '' ?></td>
+                    <td><?= $killsHtml ?></td>
+                    <td><?= !empty($hurtHtml) ? ((!empty($killsHtml) ? 'and ' : '') . 'severely hurting') : '' ?></td>
+                    <td><?= $hurtHtml ?></td>
+                    <td><a href="javascript:void(0)" onclick="deleteLogEntry(<?= $action->getId() ?>)"><i class="material-icons">delete</i></a></td>
+                </tr>
+                <?php
+                $rows[] = ob_get_clean();
+            }
         }
         $rows = array_reverse($rows);
         ob_start();
@@ -218,3 +220,4 @@ abstract class EncounterForm
         }
     }
 }
+
