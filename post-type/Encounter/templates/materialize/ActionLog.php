@@ -4,6 +4,7 @@ namespace dd_encounters\PostType\Encounter\Templates;
 
 use dd_encounters\models\CombatAction;
 use dd_encounters\models\Creature;
+use dd_encounters\models\Monster;
 use dd_encounters\models\Player;
 use mp_general\base\BaseFunctions;
 
@@ -27,7 +28,7 @@ abstract class ActionLog
             if ($creature instanceof Player && $creature->getPostId() !== null) {
                 ?>
                 <div class="modal" id="player_<?= $creature->getId() ?>">
-                    <div class="modal-content">[pc header="<?= $creature->getName() ?>" id="<?= $creature->getPostId() ?>"]</div>
+                    <div class="modal-content"><?= do_shortcode('[pc header="' . $creature->getName() . '" header-url="' . $creature->getUrl() . '" id="' . $creature->getPostId() .' "]') ?></div>
                 </div>
                 <?php
             }
