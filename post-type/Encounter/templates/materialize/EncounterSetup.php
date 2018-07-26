@@ -4,7 +4,7 @@ namespace dd_encounters\PostType\Encounter\Templates;
 
 use dd_encounters\models\Monster;
 use dd_encounters\models\Player;
-use \mp_general\base\BaseFunctions;
+use mp_general\base\BaseFunctions;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -15,17 +15,14 @@ abstract class EncounterSetup
 {
 
     /**
-     * @param int    $postId
-     * @param string $content
-     *
+     * @param int[]     $monsterCounts
+     * @param Monster[] $monsters
+     * @param Player[]  $players
      * @return string
      */
-    public static function show(int $postId, string $content): string
+    public static function show(array $monsterCounts, array $monsters, array $players): string
     {
-        $monsterCounts = get_post_meta($postId, 'monsters', true);
-        $monsters      = Monster::findByIds(array_keys($monsterCounts));
-        $players       = Player::findByIds(get_post_meta($postId, 'activePlayers', true), 'p_initiative', 'DESC');
-        $uniqueId      = 0;
+        $uniqueId = 0;
         ob_start();
         ?>
         <form method="post">
@@ -93,7 +90,7 @@ abstract class EncounterSetup
             <button type="submit" class="btn">Setup Players</button>
         </form>
         <?php
-        return ob_get_clean() . $content;
+        return ob_get_clean();
     }
 }
 
