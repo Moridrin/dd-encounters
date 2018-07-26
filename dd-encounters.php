@@ -17,7 +17,8 @@ if (!defined('ABSPATH')) {
 define('DD_ENCOUNTERS_PATH', plugin_dir_path(__FILE__));
 define('DD_ENCOUNTERS_URL', plugins_url() . '/' . plugin_basename(__DIR__));
 
-require_once 'post-type/Encounter.php';
+require_once 'post-type/Encounter/Admin.php';
+require_once 'post-type/Encounter/Frontend.php';
 require_once 'general/general.php';
 require_once 'models/Creature.php';
 require_once 'models/CombatAction.php';

@@ -7,6 +7,7 @@ use dd_encounters\models\CombatMonster;
 use dd_encounters\models\Monster;
 use dd_encounters\models\Player;
 use mp_general\base\SSV_Global;
+use mp_general\base\SSV_Themes;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -176,6 +177,10 @@ abstract class DD_Encounters
                                         ],
                                     ]
         );
+    }
+
+    public static function getCurrentTheme() {
+        return SSV_Themes::getCurrentTheme([SSV_Themes::THEME_MATERIALIZE]);
     }
 }
 

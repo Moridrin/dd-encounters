@@ -1,148 +1,17 @@
 <?php
 
-namespace dd_encounters\PostType;
+namespace dd_encounters\PostType\Encounter;
 
-use dd_encounters\models\CombatAction;
-use dd_encounters\models\CombatMonster;
-use dd_encounters\models\Creature;
 use dd_encounters\models\Monster;
 use dd_encounters\models\Player;
-use dd_encounters\PostType\Templates\Materialize\EncounterForm as MaterializeEncounterForm;
-use dd_encounters\PostType\Templates\Materialize\EncounterSetup as MaterializeEncounterSetup;
-use dd_encounters\PostType\Templates\Standard\EncounterForm as StandardEncounterForm;
-use dd_encounters\PostType\Templates\Standard\EncounterSetup as StandardEncounterSetup;
-use Exception;
 use mp_general\base\BaseFunctions;
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-abstract class Encounter
+abstract class Admin
 {
-    /**
-     * @param string $content
-     *
-     * @return string
-     * @throws Exception
-     */
-    public static function filterContent(string $content): string
-    {
-        global $post;
-        if ($post->post_type !== 'encounter') {
-            return $content;
-        }
-
-        if (BaseFunctions::isValidPOST(null)) {
-            switch ($_POST['action']) {
-                case 'encounterSetup':
-                    require_once 'templates/standard/EncounterSetup.php';
-                    self::processEncounterSetup($post->ID);
-                    break;
-                case 'saveCombatAction':
-                    require_once 'templates/standard/EncounterForm.php';
-                    self::processEncounterForm($post->ID);
-                    break;
-            }
-            BaseFunctions::redirect();
-            return '<h1>Processing...</h1>';
-        }
-
-        $players        = Player::findByIds(get_post_meta($post->ID, 'activePlayers', true), 'p_initiative', 'DESC');
-        $combatMonsters = CombatMonster::findByEncounterId($post->ID);
-        $startSetup     = empty($combatMonsters);
-        if ($startSetup === false) {
-            /** @var Player $player */
-            foreach ($players as $player) {
-                if ($player->getInitiative() === null) {
-                    $startSetup = true;
-                    break;
-                }
-            }
-        }
-        if ($startSetup) {
-            if (current_theme_supports('materialize')) {
-                require_once 'templates/materialize/EncounterSetup.php';
-                return MaterializeEncounterSetup::show($post->ID, $content);
-            } else {
-                require_once 'templates/standard/EncounterSetup.php';
-                return StandardEncounterSetup::show($post->ID, $content);
-            }
-        } else {
-            if (current_theme_supports('materialize')) {
-                require_once 'templates/materialize/EncounterForm.php';
-                return MaterializeEncounterForm::show($post->ID, $content);
-            } else {
-                require_once 'templates/standard/EncounterForm.php';
-                return StandardEncounterForm::show($post->ID, $content);
-            }
-        }
-    }
-
-    /**
-     * @param $postId
-     *
-     * @throws Exception
-     */
-    private static function processEncounterSetup($postId): void
-    {
-        if (!BaseFunctions::isValidPOST(null)) {
-            throw new Exception('Not a valid Post. Not Processing.');
-        }
-        if ($_POST['action'] !== 'encounterSetup') {
-            throw new Exception('Not a post request to process the setup for the encounter. Not Processing.');
-        }
-        foreach (Player::findByIds(get_post_meta($postId, 'activePlayers', true)) as $playerId => $player) {
-            $player
-                ->setInitiative(BaseFunctions::sanitize($_POST['p_initiative'][$playerId], 'int'))
-                ->setCurrentHp(BaseFunctions::sanitize($_POST['p_currentHp'][$playerId], 'int'))
-                ->save()
-            ;
-        }
-        foreach (BaseFunctions::sanitize($_POST['name'], 'text') as $id => $name) {
-            CombatMonster::create(
-                $postId,
-                explode('_', $id)[0],
-                $name,
-                BaseFunctions::sanitize($_POST['hp'][$id], 'int'),
-                BaseFunctions::sanitize($_POST['currentHp'][$id], 'int'),
-                BaseFunctions::sanitize($_POST['initiative'][$id], 'int')
-            );
-        }
-    }
-
-    /**
-     * @param int $postId
-     *
-     * @throws Exception
-     */
-    public static function processEncounterForm(int $postId): void
-    {
-        $players        = Player::findByIds(get_post_meta($postId, 'activePlayers', true), 'p_initiative', 'DESC');
-        $combatMonsters = CombatMonster::findByEncounterId($postId);
-        /** @var Creature[] $creatures */
-        $creatures = array_merge($players, $combatMonsters);
-
-        if (!BaseFunctions::isValidPOST(null)) {
-            throw new Exception('Not a valid Post. Not Processing.');
-        }
-        if ($_POST['action'] !== 'saveCombatAction') {
-            throw new Exception('Not a post request to process the setup for the encounter. Not Processing.');
-        }
-        $actor             = BaseFunctions::sanitize($_POST['actor'], 'text');
-        $affectedCreatures = BaseFunctions::sanitize($_POST['affectedCreatures'], 'int');
-        $creatureAction    = BaseFunctions::sanitize($_POST['creatureAction'], 'text');
-        $damage            = BaseFunctions::sanitize($_POST['damage'], 'int');
-        $damage            = array_filter(
-            $damage,
-            function ($key) use ($affectedCreatures) {
-                return in_array($key, $affectedCreatures);
-            },
-            ARRAY_FILTER_USE_KEY
-        );
-        CombatAction::create($postId, $actor, $affectedCreatures, $creatureAction, $damage);
-    }
-
     public static function setupPostType(): void
     {
 
@@ -214,8 +83,8 @@ abstract class Encounter
 
     public static function addMetaBoxes(): void
     {
-        add_meta_box('dd_encounter_players', 'Players', [Encounter::class, 'playersMetaBox'], 'encounter', 'side', 'default');
-        add_meta_box('dd_encounter_monsters', 'Monsters', [Encounter::class, 'monstersMetaBox'], 'encounter', 'side', 'default');
+        add_meta_box('dd_encounter_players', 'Players', [Admin::class, 'playersMetaBox'], 'encounter', 'side', 'default');
+        add_meta_box('dd_encounter_monsters', 'Monsters', [Admin::class, 'monstersMetaBox'], 'encounter', 'side', 'default');
     }
 
     public static function playersMetaBox(): void
@@ -361,9 +230,8 @@ abstract class Encounter
     }
 }
 
-add_filter('the_content', [Encounter::class, 'filterContent'], 13);
-add_action('init', [Encounter::class, 'setupPostType']);
-add_action('init', [Encounter::class, 'setupTaxonomy']);
-add_action('add_meta_boxes', [Encounter::class, 'addMetaBoxes']);
-add_action('save_post_encounter', [Encounter::class, 'saveMetadata']);
+add_action('init', [Admin::class, 'setupPostType']);
+add_action('init', [Admin::class, 'setupTaxonomy']);
+add_action('add_meta_boxes', [Admin::class, 'addMetaBoxes']);
+add_action('save_post_encounter', [Admin::class, 'saveMetadata']);
 

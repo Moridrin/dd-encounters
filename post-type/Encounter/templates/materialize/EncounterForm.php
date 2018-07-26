@@ -1,6 +1,6 @@
 <?php
 
-namespace dd_encounters\PostType\Templates\Materialize;
+namespace dd_encounters\PostType\Encounter\Templates;
 
 use dd_encounters\models\CombatAction;
 use dd_encounters\models\CombatMonster;
@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+/** @noinspection PhpUndefinedClassInspection */
 abstract class EncounterForm
 {
 

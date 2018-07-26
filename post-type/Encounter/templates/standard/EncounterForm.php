@@ -1,6 +1,6 @@
 <?php
 
-namespace dd_encounters\PostType\Templates\Standard;
+namespace dd_encounters\PostType\Encounter\Templates;
 
 use dd_encounters\models\CombatAction;
 use dd_encounters\models\CombatMonster;
@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+/** @noinspection PhpUndefinedClassInspection */
 abstract class EncounterForm
 {
 
@@ -150,7 +151,7 @@ abstract class EncounterForm
                 $died = $affectedCreature->addDamage($damages[$affectedCreatureId]);
                 if ($died) {
                     $killsHtml[] = self::getCreatureHtml($creatures[$affectedCreatureId]);
-                } elseif ($damages[$affectedCreatureId] > ($affectedCreature->getMaxHp() / 3)) {
+                } elseif ($damages[$affectedCreatureId] > ($affectedCreature->getMaxHp() / 4)) {
                     $hurtHtml[] = self::getCreatureHtml($creatures[$affectedCreatureId]);
                 }
             }

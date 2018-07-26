@@ -1,6 +1,6 @@
 <?php
 
-namespace dd_encounters\PostType\Templates\Materialize;
+namespace dd_encounters\PostType\Encounter\Templates;
 
 use dd_encounters\models\Monster;
 use dd_encounters\models\Player;
@@ -10,6 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+/** @noinspection PhpUndefinedClassInspection */
 abstract class EncounterSetup
 {
 
