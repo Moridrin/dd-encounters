@@ -133,13 +133,12 @@ abstract class Frontend
         require_once 'templates/' . $currentTheme . '/ActionLog.php';
         /** @noinspection PhpUndefinedClassInspection */
 
-        $players           = Player::findByIds(get_post_meta($postId, 'activePlayers', true), 'p_initiative', 'DESC');
-        $monsters          = CombatMonster::findByEncounterId($postId);
         $actions           = CombatAction::findByEncounterId($postId);
+        $monsters          = CombatMonster::findByEncounterId($postId);
+        $players           = Player::findByIds(get_post_meta($postId, 'activePlayers', true), 'p_initiative', 'DESC');
+        /** @var Creature[] $creatures */
         $creatures         = array_merge($monsters, $players);
-        $currentCreatureId = BaseFunctions::sanitize($_GET['activeCreature'] ?? key($creatures), 'int');
-        $nextCreatureUrl   = BaseFunctions::getCurrentUrlWithArguments(['activeCreature' => ($currentCreatureId + 1) % count($creatures)]);
-        $previousCombatActions = CombatAction::getAutocompleteByEncounterAmdActorId($postId, $currentCreatureId);
+        $creatureCount = count($creatures);
         usort(
             $creatures,
             function (Creature $a, Creature $b) {
@@ -147,14 +146,22 @@ abstract class Frontend
             }
         );
 
-        $html = self::getMessageContainer();
+        $messageContainer = self::getMessageContainer();
         /** @noinspection PhpUndefinedClassInspection */
-        $html .= EncounterForm::show($currentCreatureId, $creatures, $previousCombatActions, $nextCreatureUrl);
+        $actionLog = ActionLog::show($actions, $creatures);
         /** @noinspection PhpUndefinedClassInspection */
-        $html .= ActionLog::show($actions, $creatures);
-        $html .= $content;
 
-        return $html;
+        $currentCreatureId = BaseFunctions::sanitize($_GET['activeCreature'] ?? key($creatures), 'int');
+        $previousCombatActions = CombatAction::getAutocompleteByEncounterAmdActorId($postId, $currentCreatureId);
+        $nextCreatureId = ($currentCreatureId + 1) % $creatureCount;
+        $deathCount = 0;
+        while ($creatures[$nextCreatureId]->getCurrentHp() === 0 && $deathCount < $creatureCount) {
+            $nextCreatureId = ($nextCreatureId + 1) % $creatureCount;
+            ++$deathCount;
+        }
+        $nextCreatureUrl   = BaseFunctions::getCurrentUrlWithArguments(['activeCreature' => $nextCreatureId]);
+        $encounterForm = EncounterForm::show($currentCreatureId, $creatures, $previousCombatActions, $nextCreatureUrl);
+        return $messageContainer . $encounterForm . $actionLog . $content;
     }
 
     /**
