@@ -178,9 +178,9 @@ abstract class Frontend
             throw new Exception('Not a post request to process the setup for the encounter. Not Processing.');
         }
         $actor             = BaseFunctions::sanitize($_POST['actor'], 'text');
-        $affectedCreatures = BaseFunctions::sanitize($_POST['affectedCreatures'], 'int');
         $creatureAction    = BaseFunctions::sanitize($_POST['creatureAction'], 'text');
-        $damage            = BaseFunctions::sanitize($_POST['damage'], 'int');
+        $affectedCreatures = BaseFunctions::sanitize($_POST['affectedCreatures'] ?? [], 'int');
+        $damage            = BaseFunctions::sanitize($_POST['damage'] ?? [], 'int');
         $damage            = array_filter(
             $damage,
             function ($key) use ($affectedCreatures) {
