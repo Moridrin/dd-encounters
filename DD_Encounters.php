@@ -66,6 +66,12 @@ abstract class DD_Encounters
      */
     public static function setupForBlog(int $blogId = null)
     {
+        $admins = get_users(['role' => 'administrator']);
+        /** @var \WP_User $admin */
+        foreach ($admins as $admin) {
+            $admin->add_cap('edit_players');
+            $admin->add_cap('edit_monsters');
+        }
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         global $wpdb;
         $wpdb->query(Player::getDatabaseCreateQuery($blogId));
