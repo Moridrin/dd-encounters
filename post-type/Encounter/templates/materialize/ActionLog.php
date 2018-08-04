@@ -4,7 +4,6 @@ namespace dd_encounters\PostType\Encounter\Templates;
 
 use dd_encounters\models\CombatAction;
 use dd_encounters\models\Creature;
-use dd_encounters\models\Monster;
 use dd_encounters\models\Player;
 use mp_general\base\BaseFunctions;
 
@@ -59,8 +58,8 @@ abstract class ActionLog
                 <td><?= $actorHtml ?></td>
                 <td><?= BaseFunctions::escape($action->getAction(), 'html') ?></td>
                 <td><?= $affectedCreaturesHtml ?></td>
-                <td><?= $totalDamage > 0 ? 'dealing a total of' : '' ?></td>
-                <td><?= $totalDamage > 0 ? BaseFunctions::escape($totalDamage, 'html') : '' ?></td>
+                <td><?= ($totalDamage > 0 ? 'dealing a total of' : ($totalDamage < 0 ? 'healing a total of' : '')) ?></td>
+                <td><?= $totalDamage !== 0 ? BaseFunctions::escape($totalDamage, 'html') : '' ?></td>
                 <td><?= $totalDamage > 0 ? 'damage' : '' ?></td>
                 <td><?= !empty($killsHtml) ? 'killing' : '' ?></td>
                 <td><?= $killsHtml ?></td>

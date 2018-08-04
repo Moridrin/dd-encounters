@@ -8,12 +8,10 @@ use dd_encounters\models\CombatMonster;
 use dd_encounters\models\Creature;
 use dd_encounters\models\Monster;
 use dd_encounters\models\Player;
-use /** @noinspection PhpUndefinedClassInspection */
-    dd_encounters\PostType\Encounter\Templates\ActionLog;
-use /** @noinspection PhpUndefinedClassInspection */
-    dd_encounters\PostType\Encounter\Templates\EncounterForm;
-use /** @noinspection PhpUndefinedClassInspection */
-    dd_encounters\PostType\Encounter\Templates\EncounterSetup;
+use dd_encounters\PostType\Encounter\Templates\ActionLog;
+use dd_encounters\PostType\Encounter\Templates\EncounterForm;
+use dd_encounters\PostType\Encounter\Templates\EncounterSetup;
+use dd_encounters\PostType\Encounter\Templates\FinishForm;
 use Exception;
 use mp_general\base\BaseFunctions;
 
@@ -33,7 +31,7 @@ abstract class Frontend
     public static function filterContent(string $content): string
     {
         global $post;
-        if ($post->post_type !== 'encounter') {
+        if ($post === null || $post->post_type !== 'encounter' || get_post_meta($post->ID, 'finished')) {
             return $content;
         }
 
@@ -45,9 +43,14 @@ abstract class Frontend
                 case 'saveCombatAction':
                     self::processEncounterForm($post->ID);
                     break;
+                case 'finishEncounter':
+                    self::processFinishForm($post->ID);
+                    break;
             }
             BaseFunctions::redirect();
             return '<h1>Processing...</h1>';
+        } elseif (BaseFunctions::getParameter('finish', 'bool')) {
+            return self::getFinishForm($post->ID, $post->post_content);
         }
 
         $players        = Player::findByIds(get_post_meta($post->ID, 'activePlayers', true), 'p_initiative', 'DESC');
@@ -196,6 +199,51 @@ abstract class Frontend
         );
 
         CombatAction::create($postId, $actor, $affectedCreatures, $creatureAction, $damage);
+    }
+
+    public static function getFinishForm(int $postId, string $content): string
+    {
+        $currentTheme = DD_Encounters::getCurrentTheme();
+        /** @noinspection PhpIncludeInspection */
+        require_once 'templates/' . $currentTheme . '/FinishForm.php';
+
+        $actions  = CombatAction::findByEncounterId($postId);
+        $monsters = CombatMonster::findByEncounterId($postId);
+        $players  = Player::findByIds(get_post_meta($postId, 'activePlayers', true), 'p_initiative', 'DESC');
+        /** @var Creature[] $creatures */
+        $creatures = array_merge($monsters, $players);
+        usort(
+            $creatures,
+            function (Creature $a, Creature $b) {
+                return $b->getInitiative() - $a->getInitiative();
+            }
+        );
+
+        /** @noinspection PhpUndefinedClassInspection */
+        return self::getMessageContainer() . FinishForm::show($actions, $creatures, $content);
+    }
+
+    /**
+     * @param int $postId
+     *
+     * @throws Exception
+     */
+    public static function processFinishForm(int $postId): void
+    {
+        if (!BaseFunctions::isValidPOST(null)) {
+            throw new Exception('Not a valid Post. Not Processing.');
+        }
+        if (!BaseFunctions::getParameter('finish', 'bool')) {
+            throw new Exception('Not a post request to finish the combat. Not Processing.');
+        }
+        $post               = get_post($postId);
+        $post->post_content = stripslashes(BaseFunctions::getParameter('final', 'html'));
+
+        remove_action('save_post', [Admin::class, 'saveMetadata']);
+        wp_update_post($post);
+        add_action('save_post', [Admin::class, 'saveMetadata']);
+
+        update_post_meta($postId, 'finished', true);
     }
 }
 

@@ -94,7 +94,12 @@ abstract class EncounterForm
             </div>
             <div class="row">
                 <button type="submit" style="display: none;">Submit Action</button>
-                <a href="<?= $nextCreatureUrl ?>" class="btn">Next Monster</a>
+                <div class="col s6">
+                    <a href="<?= BaseFunctions::escape($nextCreatureUrl, 'url') ?>" class="btn">Next Monster</a>
+                </div>
+                <div class="col s6 right-align">
+                    <a href="<?= BaseFunctions::escape(BaseFunctions::getCurrentUrlWithArguments(['finish' => true]), 'url') ?>" class="btn">Finish Combat</a>
+                </div>
             </div>
         </form>
         <?php

@@ -87,7 +87,7 @@ abstract class EncounterSetup
                 }
             }
             ?>
-            <button type="submit" class="btn">Setup Players</button>
+            <button type="submit" class="btn">Start Encounter</button>
         </form>
         <?php
         return ob_get_clean();
