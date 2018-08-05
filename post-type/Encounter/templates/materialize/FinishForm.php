@@ -62,6 +62,8 @@ abstract class FinishForm
             if (strpos($actionHtml, '$target$') || strpos($actionHtml, '$$')) {
                 $actionHtml                = str_replace(['$$', '$target$'], $affectedCreaturesHtml, $actionHtml);
                 $affectedCreaturesInAction = true;
+            } elseif (count($action->getAffectedCreatures()) === 1 && strpos($creatures[$action->getAffectedCreatures()[0]]->getName(), $actionHtml) !== false) {
+                $affectedCreaturesInAction = true;
             }
             if ($actionHtml !== '') {
                 $rowHtml .= ' ' . $actionHtml;
@@ -69,17 +71,25 @@ abstract class FinishForm
             if (!$affectedCreaturesInAction && $affectedCreaturesHtml !== '') {
                 $rowHtml .= ' ' . $affectedCreaturesHtml;
             }
-            if ($totalDamage > 0) {
-                $rowHtml .= '<span data-display="game"> dealing a total of ' . BaseFunctions::escape($totalDamage, 'html') . ' damage</span>';
+            if ($totalDamage !== 0) {
+                $rowHtml .= '<span data-display="game"> dealing ';
+                if (count($action->getAffectedCreatures()) > 1) {
+                    $rowHtml .= 'a total of ';
+                }
+                $rowHtml .= BaseFunctions::escape($totalDamage, 'html') . ' damage</span>';
             } elseif ($totalDamage < 0) {
-                $rowHtml .= '<span data-display="game"> healing a total of ' . BaseFunctions::escape($totalDamage * -1, 'html') . 'hp</span>';
+                $rowHtml .= '<span data-display="game"> healing ';
+                if (count($action->getAffectedCreatures()) > 1) {
+                    $rowHtml .= 'a total of ';
+                }
+                $rowHtml .= BaseFunctions::escape($totalDamage * -1, 'html') . 'hp</span>';
             }
             if ($killsHtml !== '') {
                 $rowHtml .= ', killing ' . $killsHtml;
             }
             $rows[] = ucfirst($rowHtml) . '.';
         }
-        $rows    = array_reverse($rows);
+        // $rows    = array_reverse($rows);
         $parts[] = '<h1>Log</h1>' . PHP_EOL . implode(PHP_EOL, $rows);
         $parts[] = $modalsHtml;
         $parts   = array_filter($parts);
@@ -87,38 +97,64 @@ abstract class FinishForm
         ?>
         <form method="post">
             <input type="hidden" name="action" value="finishEncounter">
-            <div class="input-field">
-                <textarea id="final" name="final" class="materialize-textarea"><?= implode(PHP_EOL . PHP_EOL, $parts) ?></textarea>
-                <label for="final">Final Content</label>
-            </div>
-            <div class="card">
-                <div class="card-image primary">
-                    <h1 style="margin: 0; padding: 10px;">Preview</h1>
-                    <a class="btn-floating halfway-fab waves-effect waves-light accent" onclick="updatePreview()"><i id="syncButton" class="material-icons">sync</i></a>
+            <div class="row">
+                <div class="input-field col s12 m6">
+                    <textarea id="final" name="final" class="materialize-textarea" onchange="updatePreview()"><?= stripslashes(implode(PHP_EOL . PHP_EOL, $parts)) ?></textarea>
+                    <label for="final">Final Content</label>
                 </div>
-                <div class="card-content" id="preview">
+                <div class="col s12 m6">
+                    <div class="card">
+                        <div class="card-image primary">
+                            <h1 style="margin: 0; padding: 10px;">Preview</h1>
+                            <a class="btn-floating halfway-fab waves-effect waves-light accent" onclick="updatePreview()"><i id="syncButton" class="material-icons">sync</i></a>
+                        </div>
+                        <div class="card-content" id="preview">
+                        </div>
+                    </div>
+                    <button class="button btn">Save</button>
                 </div>
             </div>
-            <button class="button btn primary">Save</button>
         </form>
         <script>
+            let finalTextArea = document.getElementById('final');
+            let previewDiv = document.getElementById('preview');
+            let lastValue = '';
+
+            function checkForUpdate() {
+                if (finalTextArea.value !== lastValue) {
+                    updatePreview();
+                }
+            }
+
+            setInterval(checkForUpdate, 5000);
+
             function updatePreview() {
+                let currentValue = finalTextArea.value;
                 let syncButton = document.getElementById('syncButton');
                 syncButton.classList.add('rotating');
-                jQuery.post(
-                    '<?= BaseFunctions::escape(admin_url('admin-ajax.php'), 'js') ?>',
-                    {
-                        action: 'mp_dd_encounters_filterContent',
-                        content: document.getElementById('final').value,
-                    },
-                    function (data) {
-                        if (generalFunctions.ajaxResponse(data)) {
-                            data = JSON.parse(data);
-                            document.getElementById('preview').innerHTML = data['content'];
-                            syncButton.classList.remove('rotating');
-                        }
+                previewDiv.innerHTML = '';
+                setTimeout(function () {
+                    if (currentValue !== lastValue) {
+                        jQuery.post(
+                            '<?= BaseFunctions::escape(admin_url('admin-ajax.php'), 'js') ?>',
+                            {
+                                action: 'mp_dd_encounters_filterContent',
+                                content: currentValue,
+                            },
+                            function (data) {
+                                if (generalFunctions.ajaxResponse(data)) {
+                                    data = JSON.parse(data);
+                                    previewDiv.innerHTML = data['content'];
+                                    syncButton.classList.remove('rotating');
+                                    lastValue = currentValue;
+                                }
+                            }
+                        );
+                    } else {
+                        syncButton.classList.remove('rotating');
+                        previewDiv.innerHTML = lastValue;
                     }
-                );
+                }, 200);
             }
 
             updatePreview();
