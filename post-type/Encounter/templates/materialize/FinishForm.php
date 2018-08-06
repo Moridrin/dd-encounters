@@ -29,7 +29,7 @@ abstract class FinishForm
             if ($creature instanceof Player && $creature->getPostId() !== null) {
                 ?>
                 <div class="modal" id="player_<?= $creature->getId() ?>">
-                    <div class="modal-content"><?= do_shortcode('[pc header="' . $creature->getName() . '" header-url="' . $creature->getUrl() . '" id="' . $creature->getPostId() . ' "]') ?></div>
+                    <div class="modal-content"><?= '[pc header="' . $creature->getName() . '" header-url="' . $creature->getUrl() . '" id="' . $creature->getPostId() . ' "]' ?></div>
                 </div>
                 <?php
             }
