@@ -27,6 +27,6 @@ require_once 'models/Monster.php';
 require_once 'models/CombatMonster.php';
 require_once 'DD_Encounters.php';
 require_once 'Options.php';
-require_once 'ajax.php';
+require_once 'Ajax.php';
 
 // \dd_encounters\DD_Encounters::CLEAN_INSTALL();
